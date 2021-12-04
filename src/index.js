@@ -18,6 +18,21 @@ export default function registerHook({ action }, context) {
     // hook into server
     action('server.start', subscribeServer.bindExpress);
 
+    async function messageGet(ws, message, schema) {
+        const service = new ItemsService(message.collection, { knex, schema, accountability: { ...req.accountability, admin: true }});
+        logger.info(`query - ${JSON.stringify(message.query)}`);
+        const result = await service.readByQuery(message.query);
+        logger.info(`result`);
+        ws.send(outgoingResponse(result));
+    }
+    async function messagePost(ws, message, schema) {}
+    async function messagePatch(ws, message, schema) {}
+    async function messageDelete(ws, message, schema) {}
+    async function messageSubscribe(ws, message, schema) {
+        subscribe(message.collection, message.id, ws);
+        logger.info(`subscribed - ${message.collection} #${message.id}`);
+    }
+
     // message handler
     async function onMessage({ ws, req, msg }) {
         const schema = await getSchema();
@@ -28,16 +43,13 @@ export default function registerHook({ action }, context) {
         } catch (err) {
             return logger.error(err);
         }
-        if (message.type === 'GET') {
-            const service = new ItemsService(message.collection, { knex, schema, accountability: { ...req.accountability, admin: true }});
-            logger.info(`query - ${JSON.stringify(message.query)}`);
-            const result = await service.readByQuery(message.query);
-            logger.info(`result`);
-            ws.send(outgoingResponse(result));
-        }
-        if (message.type === 'SUBSCRIBE') {
-            subscribe(message.collection, message.id, ws);
-            logger.info(`subscribed - ${message.collection} #${message.id}`);
+        switch (message.type) {
+            case 'GET': return await messageGet(ws, message, schema);
+            case 'POST': return await messagePost(ws, message, schema);
+            case 'PATCH': return await messagePatch(ws, message, schema);
+            case 'DELETE': return await messageDelete(ws, message, schema);
+            case 'SUBSCRIBE': return await messageSubscribe(ws, message, schema);
+            default: throw new Error('Invalid message type! get, post, patch, delete or subscribe expected');
         }
     }
 
