@@ -14,11 +14,16 @@ Like the API the token can be supplied as a header `Authorization: Bearer [TOKEN
 > Note: generated tokens are not supported yet!
 
 ## Message Types
+All types except `SUBSCRIBE` allow for a `uid` to be sent with the request which will be injected into the `RESULT` so you can identify which response belongs to which request.
+
 ### GET
 You request data by sending a message like this to the server: `{"type":"get", "collection":"test", "query":{"limit":2}}`.
-Where the query object follows the ItemService.readByQuery options.
+Where the query object follows the `ItemService.readByQuery` options.
 The server should respond with an object like this: `{"type":"RESPONSE","data":[...]}`.
 ### POST
+You can create new items by sending a message like this to the server: `{"type":"post", "collection":"test", "data":{"test":"test123"}}` or `{"type":"post", "collection":"test", "data":[{"test":"test123"},{"test":"test456"}]}`.
+Where the query object follows the `ItemService.createOne` or `ItemService.createMany` options.
+The server should respond with an object like this: `{"type":"RESPONSE","data":[{"id":6,"test":"test123"},{"id":7,"test":"test456"}]}`.
 ### PATCH
 ### DELETE
 ### SUBSCRIBE

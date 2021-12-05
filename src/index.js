@@ -26,23 +26,32 @@ export default function registerHook({ action }, context) {
     // hook into server
     action('server.start', subscribeServer.bindExpress);
 
-    async function messageGet(ws, message, schema, accountability) {
-        const service = new ItemsService(message.collection, { 
-            knex, schema, accountability
-        });
-        logger.info(`query - ${JSON.stringify(message.query)}`);
+    async function messageGet(ws, message, service) {
         const result = await service.readByQuery(message.query);
-        logger.info(`result`);
-        ws.send(outgoingResponse(result));
+        ws.send(outgoingResponse(result, message));
     }
-    async function messagePost(ws, message, schema, accountability) {}
-    async function messagePatch(ws, message, schema, accountability) {}
-    async function messageDelete(ws, message, schema, accountability) {}
-    async function messageSubscribe(ws, message, schema, accountability) {
-        // check get permissions by requesting one item
-        const service = new ItemsService(message.collection, { 
-            knex, schema, accountability
-        });
+    async function messagePost(ws, message, service) {
+        let result;
+        if (Array.isArray(message.data)) {
+            const keys = await service.createMany(message.data);
+            result = await service.readMany(keys, message.query || {})
+        } else {
+            const key = await service.createOne(message.data);
+            result = await service.readOne(key, message.query || {});
+        }
+        ws.send(outgoingResponse(result, message));
+    }
+    async function messagePatch(ws, message, service) {
+        let result;
+        console.log(message.data)
+        ws.send(outgoingResponse(result, message));
+    }
+    async function messageDelete(ws, message, service) {
+        let result;
+
+        ws.send(outgoingResponse(result, message));
+    }
+    async function messageSubscribe(ws, message, service) {
         // if not authorized the read should throw an error
         await service.readByQuery({ fields: ['*'], limit: 1 });
         // subscribe to events if all went well
@@ -61,16 +70,19 @@ export default function registerHook({ action }, context) {
             return logger.error(err);
         }
         try {
+            const service = new ItemsService(message.collection, { 
+                knex, schema, accountability: req.accountability
+            });
             switch (message.type) {
-                case 'GET': return await messageGet(ws, message, schema, req.accountability);
-                case 'POST': return await messagePost(ws, message, schema, req.accountability);
-                case 'PATCH': return await messagePatch(ws, message, schema, req.accountability);
-                case 'DELETE': return await messageDelete(ws, message, schema, req.accountability);
-                case 'SUBSCRIBE': return await messageSubscribe(ws, message, schema, req.accountability);
+                case 'GET': return await messageGet(ws, message, service);
+                case 'POST': return await messagePost(ws, message, service);
+                case 'PATCH': return await messagePatch(ws, message, service);
+                case 'DELETE': return await messageDelete(ws, message, service);
+                case 'SUBSCRIBE': return await messageSubscribe(ws, message, service);
                 default: throw new Error('Invalid message type! get, post, patch, delete or subscribe expected');
             }
         } catch (err) {
-            ws.send(outgoingError(err));
+            ws.send(outgoingError(err, message));
         }
     }
 
