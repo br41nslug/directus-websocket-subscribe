@@ -32,7 +32,6 @@ export function SubscribeServer(context) {
                     socket.destroy();
                     return;
                 }
-                console.log(request.accountability);
                 logger.info('request upgraded');
                 websocketServer.handleUpgrade(request, socket, head, (websocket) => {
                     websocketServer.emit('connection', websocket, request);

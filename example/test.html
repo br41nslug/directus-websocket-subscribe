@@ -1,0 +1,98 @@
+<html>
+<head>
+<title>Directus Websocket Tester</title>
+<style>
+.container {
+    max-width: 53rem;
+    margin-right: auto;
+    margin-left: auto;
+    padding: 16px;
+    background-color: rgb(47, 47, 47);
+}
+#connect,
+#socket {
+    display: flex;
+}
+#connect input,
+#socket textarea {
+    flex-grow: 1;
+    margin-right: 16px;
+}
+#log pre {
+    padding: 1rem;
+    height: 400px;
+    overflow-y: scroll;
+    background-color: #fff;
+    white-space: pre-wrap; 
+}
+.hidden {
+    display: none!important;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <section id="connect">
+        <input id="connect-url" value="ws://localhost:8055/websocket" />
+        <input id="connect-token" value="" placeholder="[ API Token ]" />
+        <button id="connect-btn">Connect</button>
+    </section>
+    <section id="socket" class="hidden">
+        <textarea>{"type": "GET", "collection": "test", "query": { "fields": ["*"], "limit": 5}}</textarea>
+        <button id="send-btn">Send</button>
+    </section>
+    <section id="log">
+        <pre>- Connection log will appear here</pre>
+    </section>
+</div>
+<script>
+// state
+var connected = false;
+var ws;
+// utility
+function addLog(msg) {
+    document.querySelector('#log pre').prepend(`- ${msg}\n`);
+}
+function sendMessage(msg) {
+    if (ws && connected) {
+        addLog('Sending message: '+JSON.stringify(msg, null, 2));
+        ws.send(JSON.stringify(msg));
+    }
+}
+// events
+document.getElementById('connect-btn').addEventListener('click', function () {
+    const _t = document.getElementById('connect-token').value;
+    const url = document.getElementById('connect-url').value + (_t ? '?api_token=' + _t : '');
+    addLog(`Connecting to: ${url}`);
+    ws = new WebSocket(url);
+    ws.addEventListener('open', function (event) {
+        addLog('Connection open');
+        connected = true;
+        document.getElementById('connect').classList.add('hidden');
+        document.getElementById('socket').classList.remove('hidden');
+    });
+    ws.addEventListener('close', function (event) {
+        addLog('Connection closed');
+        document.getElementById('socket').classList.add('hidden');
+        document.getElementById('connect').classList.remove('hidden');
+    });
+    ws.addEventListener('error', function (event) {
+        addLog('Connection error');
+        document.getElementById('socket').classList.add('hidden');
+        document.getElementById('connect').classList.remove('hidden');
+    });
+    ws.addEventListener('message', function (event) {
+        addLog('Received: '+JSON.stringify(JSON.parse(event.data), null, 2));
+    });
+});
+document.getElementById('send-btn').addEventListener('click', function () {
+    try {
+        const msg = JSON.parse(document.querySelector('#socket textarea').value);
+        sendMessage(msg);
+    } catch (err) {
+        addLog('Invalid JSON in message! '+err);
+    }
+});
+</script>
+</body>
+</html>
