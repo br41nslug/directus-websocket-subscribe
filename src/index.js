@@ -39,6 +39,13 @@ export default function registerHook({ action }, context) {
     async function messagePatch(ws, message, schema, accountability) {}
     async function messageDelete(ws, message, schema, accountability) {}
     async function messageSubscribe(ws, message, schema, accountability) {
+        // check get permissions by requesting one item
+        const service = new ItemsService(message.collection, { 
+            knex, schema, accountability
+        });
+        // if not authorized the read should throw an error
+        await service.readByQuery({ fields: ['*'], limit: 1 });
+        // subscribe to events if all went well
         subscribe(message.collection, message.id, ws);
         logger.info(`subscribed - ${message.collection} #${message.id}`);
     }
