@@ -1,7 +1,7 @@
 # Directus Websocket Subscribe
 An extension to subscribe to directus updates over a websocket.
 
-Currently this simply adds a websocket server on the "/websocket" path (this can be changed using an environment variable). You can require authentication on this endpoint or allow the public role to connect. When connected you can get/post/patch/delete items like the api following the api permission model. Besides mimicking the api this plugin adds the option to subscribe to collection updates!
+Currently this simply adds a websocket server on the `/websocket` path (this can be changed using an environment variable). You can require authentication on this endpoint or allow the public role to connect. When connected you can get/post/patch/delete items like the api following the api permission model. Besides mimicking the api this plugin adds the option to subscribe to collection updates!
 
 You can test the websocket using the test html page [example/test.html](example/test.html).
 
@@ -15,6 +15,7 @@ Like the API the token can be supplied as a header `Authorization: Bearer [TOKEN
 
 ## Message Types
 All types except `SUBSCRIBE` allow for a `uid` to be sent with the request which will be injected into the `RESULT` so you can identify which response belongs to which request.
+> Note: singletons are not supported yet.
 
 ### GET
 You request data by sending a message like this to the server: `{"type":"get", "collection":"test", "query":{"limit":2}}`.
@@ -25,7 +26,13 @@ You can create new items by sending a message like this to the server: `{"type":
 Where the query object follows the `ItemService.createOne` or `ItemService.createMany` options.
 The server should respond with an object like this: `{"type":"RESPONSE","data":[{"id":6,"test":"test123"},{"id":7,"test":"test456"}]}`.
 ### PATCH
+You can update items by sending a message like this to the server: `{"type": "PATCH", "collection": "test", "id": 7, "data": {"test":"test321"}}` or `{"type": "PATCH", "collection": "test", "ids": [7,6], "data": {"test":"test42"}}`.
+Where the query object follows the `ItemService.updateOne` or `ItemService.updateMany` options.
+The server should respond with an object like this: `{"type":"RESPONSE","data":{"id":7,"test":"test321"}}`.
 ### DELETE
+You can delete items by sending a message like this to the server: `{"type": "DELETE", "collection": "test", "id": 3}` or `{"type": "PATCH", "collection": "test", "ids": [7,6]}`.
+Where the query object follows the `ItemService.deleteOne` or `ItemService.deleteMany` options.
+The server should respond with an object like this: `{"type":"RESPONSE","data":[7,6]}`.
 ### SUBSCRIBE
 You can subscribe to updates of any collection like this: `{"type":"subscribe", "collection":"test"}`.
 The subscribe type will require the `read` permissions on the collection you want to receive events for.

@@ -43,12 +43,28 @@ export default function registerHook({ action }, context) {
     }
     async function messagePatch(ws, message, service) {
         let result;
-        console.log(message.data)
+        if (message.ids) {
+            const keys = await service.updateMany(message.ids, message.data);
+            result = await service.readMany(keys, message.query);
+        } else if (message.id) {
+            const key = await service.updateOne(message.id, message.data);
+            result = await service.readOne(result);
+        } else {
+            throw new Error("Either 'ids' or 'id' is required for a PATCH request");
+        }
         ws.send(outgoingResponse(result, message));
     }
     async function messageDelete(ws, message, service) {
         let result;
-
+        if (message.ids) {
+            await service.deleteMany(message.ids);
+            result = message.ids;
+        } else if (message.id) {
+            await service.deleteOne(message.id);
+            result = message.id;
+        } else {
+            throw new Error("Either 'ids' or 'id' is required for a PATCH request");
+        }
         ws.send(outgoingResponse(result, message));
     }
     async function messageSubscribe(ws, message, service) {

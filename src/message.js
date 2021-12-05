@@ -34,11 +34,12 @@ export function parseIncomingMessage(msg, schema) {
     switch (type) {
         case 'GET': return { type, collection, query, uid };
         case 'POST': 
+            return { type, collection, query, data: req.data, uid };
         case 'PATCH':
-            return { type, collection, data: req.data, uid };
+            return { type, collection, query, data: req.data, ids: req.ids || false, id: req.id || false, uid };
         case 'DELETE':
         case 'SUBSCRIBE': 
-            return { type, collection, id: req.id || false, ids: req.ids || [] };
+            return { type, collection, query, id: req.id || false, ids: req.ids || false };
         default: throw new Error('Invalid message type! get, post, patch, delete or subscribe expected');
     }
 }
