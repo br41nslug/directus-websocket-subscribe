@@ -5,12 +5,20 @@
  * Allows you to subscribe to Directus collection items using a similar syntax as the items API.
  */
 import { SubscribeServer } from './websocket';
-import { outgoingResponse, parseIncomingMessage } from './message';
+import { outgoingError, outgoingResponse, parseIncomingMessage } from './message';
 
 // hook wrapper
 export default function registerHook({ action }, context) {
-    const { services, getSchema, database: knex, logger } = context;
+    const { services, getSchema, database: knex, logger, env } = context;
     const { ItemsService } = services;
+    
+    if ( ! env.WEBSOCKET_ENABLED) {
+        logger.info("Websocket Subscribe Extension is disabled (set environment variable WEBSOCKET_ENABLED to 'true')");
+        return;
+    }
+    if ( ! env.WEBSOCKET_PUBLIC) {
+        logger.info("Websocket Subscribe Extension is set to private, only valid authentication will be accepted. (WEBSOCKET_PUBLIC is 'false')");
+    }
 
     const subscribeServer = new SubscribeServer(context);
     const evtSub = {};
@@ -18,17 +26,19 @@ export default function registerHook({ action }, context) {
     // hook into server
     action('server.start', subscribeServer.bindExpress);
 
-    async function messageGet(ws, message, schema) {
-        const service = new ItemsService(message.collection, { knex, schema, accountability: { ...req.accountability, admin: true }});
+    async function messageGet(ws, message, schema, accountability) {
+        const service = new ItemsService(message.collection, { 
+            knex, schema, accountability
+        });
         logger.info(`query - ${JSON.stringify(message.query)}`);
         const result = await service.readByQuery(message.query);
         logger.info(`result`);
         ws.send(outgoingResponse(result));
     }
-    async function messagePost(ws, message, schema) {}
-    async function messagePatch(ws, message, schema) {}
-    async function messageDelete(ws, message, schema) {}
-    async function messageSubscribe(ws, message, schema) {
+    async function messagePost(ws, message, schema, accountability) {}
+    async function messagePatch(ws, message, schema, accountability) {}
+    async function messageDelete(ws, message, schema, accountability) {}
+    async function messageSubscribe(ws, message, schema, accountability) {
         subscribe(message.collection, message.id, ws);
         logger.info(`subscribed - ${message.collection} #${message.id}`);
     }
@@ -43,13 +53,17 @@ export default function registerHook({ action }, context) {
         } catch (err) {
             return logger.error(err);
         }
-        switch (message.type) {
-            case 'GET': return await messageGet(ws, message, schema);
-            case 'POST': return await messagePost(ws, message, schema);
-            case 'PATCH': return await messagePatch(ws, message, schema);
-            case 'DELETE': return await messageDelete(ws, message, schema);
-            case 'SUBSCRIBE': return await messageSubscribe(ws, message, schema);
-            default: throw new Error('Invalid message type! get, post, patch, delete or subscribe expected');
+        try {
+            switch (message.type) {
+                case 'GET': return await messageGet(ws, message, schema, req.accountability);
+                case 'POST': return await messagePost(ws, message, schema, req.accountability);
+                case 'PATCH': return await messagePatch(ws, message, schema, req.accountability);
+                case 'DELETE': return await messageDelete(ws, message, schema, req.accountability);
+                case 'SUBSCRIBE': return await messageSubscribe(ws, message, schema, req.accountability);
+                default: throw new Error('Invalid message type! get, post, patch, delete or subscribe expected');
+            }
+        } catch (err) {
+            ws.send(outgoingError(err));
         }
     }
 

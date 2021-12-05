@@ -12,6 +12,12 @@ services:
       KEY: '[ FILL UUID ]'
       SECRET: '[ FILL UUID ]'
 
+      DB_CLIENT: 'sqlite3'
+      DB_FILENAME: './data.db'
+
+      WEBSOCKET_ENABLED: 'true'
+      WEBSOCKET_PUBLIC: 'false'
+
       ADMIN_EMAIL: 'admin@example.com'
       ADMIN_PASSWORD: 'd1r3ctu5'
 

@@ -4,6 +4,7 @@
  * 
  * Handles basic static token verification
  */
+import { getPermissions } from './permissions';
 
 function getQuery(request) {
     const q = request.url.replace(/^.*\?/, '');
@@ -21,10 +22,14 @@ function getAuthHeader(request) {
     return header.replace('Bearer ', '');
 }
 
-export async function authenticate(request, { database }, nextHandler) {
+export async function authenticate(request, context, nextHandler) {
+    const { database, env } = context;
     const ip = request.socket.remoteAddress;
     const query = getQuery(request);
     const token = query.api_token || getAuthHeader(request);
+    // quit early for private sockets
+    if ( ! token && ! env.WEBSOCKET_PUBLIC) return;
+
 	request.accountability = {
 		user: null,
 		role: null,
@@ -54,7 +59,9 @@ export async function authenticate(request, { database }, nextHandler) {
         request.accountability.role = user.role;
         request.accountability.admin = user.admin_access === true || user.admin_access == 1;
         request.accountability.app = user.app_access === true || user.app_access == 1;
-	}
+    }
+
+	request.accountability.permissions = await getPermissions(request.accountability, context);
 
 	return nextHandler();
 }

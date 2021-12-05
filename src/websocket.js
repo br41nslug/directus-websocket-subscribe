@@ -26,13 +26,13 @@ export function SubscribeServer(context) {
         server.on('upgrade', (request, socket, head) => {
             // do authentication on the socket connection
             authenticate(request, context, function next() {
-                if ( ! request.accountability ||
-                     ! request.accountability.user ||
-                     ! request.accountability.role) {
+                if ( ! request.accountability || ( ! env.WEBSOCKET_PUBLIC && ! request.accountability.role)) {
+                    logger.info('request denied');
                     socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
                     socket.destroy();
                     return;
                 }
+                console.log(request.accountability);
                 logger.info('request upgraded');
                 websocketServer.handleUpgrade(request, socket, head, (websocket) => {
                     websocketServer.emit('connection', websocket, request);

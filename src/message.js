@@ -63,3 +63,10 @@ export function outgoingResponse(data) {
         data
     });
 }
+
+export function outgoingError(data) {
+    return JSON.stringify({
+        type: 'ERROR',
+        data
+    });
+}
