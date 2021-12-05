@@ -6,7 +6,14 @@ Currently this simply adds a websocket server on the `/websocket` path (this can
 You can test the websocket using the test html page [example/test.html](example/test.html).
 
 ## Installation
-Download, build and upload to `/directus/extensions/hooks/directus-websocket-subscribe`
+- Download or fork the repository
+- Install the requirements\
+  `npm install`
+- Build the extension\
+  `npm run build`
+- Move the result to your extension folder\
+  `mv dist extensions/hooks/directus-websocket-subscribe`
+- Restart your Directus instance
 
 ## Authentication
 If the `WEBSOCKET_PUBLIC` variable is set to `true` you'll be allowed to connect to the websocket without any api token. If no token was used the public permissions will apply for the duration of the open connection. If a static token is supplied the roles/permissions associated with that token will apply for the duration of the connection (it will copy the api permissions as close as possible).
@@ -15,6 +22,9 @@ Like the API the token can be supplied as a header `Authorization: Bearer [TOKEN
 
 ## Message Types
 All types except `SUBSCRIBE` allow for a `uid` to be sent with the request which will be injected into the `RESULT` so you can identify which response belongs to which request.
+
+When you hit an error (usually permissions) it will return an object like this: `{"type": "ERROR", "data": {"status": 403, "code": "FORBIDDEN"}}`.
+
 > Note: singletons are not supported yet.
 
 ### GET
