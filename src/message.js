@@ -2,7 +2,7 @@
  * Websocket Subscribe Extension
  * Designed for Directus 9
  * 
- * Allows you to subscribe to Directus collection items using a similar syntax as the items API.
+ * Helper functions for dealing with incoming messages
  */
 
 function parseGlobalParameters(message) {

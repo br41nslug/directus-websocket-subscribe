@@ -5,9 +5,11 @@
  * Allows you to subscribe to Directus collection items using a similar syntax as the items API.
  */
 import { WebSocketServer } from 'ws';
+import { authenticate } from './authenticate';
 
-export function SubscribeServer({ env, logger }) {
+export function SubscribeServer(context) {
     const self = this || {};
+    const { env, logger } = context;
     const WS_PATH = env.WEBSOCKET_PATH || '/websocket';
     const websocketServer = new WebSocketServer({
 		noServer: true,
@@ -22,9 +24,19 @@ export function SubscribeServer({ env, logger }) {
     self.bindExpress = ({ server }) => {
         logger.info(`Websocket listening on ws://localhost:${env.PORT}${WS_PATH}`);
         server.on('upgrade', (request, socket, head) => {
-            logger.info('request upgrade');
-            websocketServer.handleUpgrade(request, socket, head, (websocket) => {
-                websocketServer.emit('connection', websocket, request);
+            // do authentication on the socket connection
+            authenticate(request, context, function next() {
+                if ( ! request.accountability ||
+                     ! request.accountability.user ||
+                     ! request.accountability.role) {
+                    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+                    socket.destroy();
+                    return;
+                }
+                logger.info('request upgraded');
+                websocketServer.handleUpgrade(request, socket, head, (websocket) => {
+                    websocketServer.emit('connection', websocket, request);
+                });
             });
         });
     };
