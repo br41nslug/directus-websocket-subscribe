@@ -3,6 +3,8 @@ An extension to subscribe to directus updates over a websocket.
 
 Currently this simply adds a websocket server on the "/websocket" path (this can be changed using an environment variable). You can require authentication on this endpoint or allow the public role to connect. When connected you can get/post/patch/delete items like the api following the api permission model. Besides mimicking the api this plugin adds the option to subscribe to collection updates!
 
+You can test the websocket using the test html page [example/test.html](example/test.html).
+
 ## Installation
 Download, build and upload to `/directus/extensions/hooks/directus-websocket-subscribe`
 
