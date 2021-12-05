@@ -65,10 +65,7 @@ h1 {
     </section>
 </div>
 <script>
-// state
-var connected = false;
-var ws;
-// utility
+var connected = false, ws;
 function addLog(msg) {
     document.querySelector('#log pre').prepend(`- ${msg}\n`);
 }
@@ -78,7 +75,6 @@ function sendMessage(msg) {
         ws.send(JSON.stringify(msg));
     }
 }
-// events
 document.getElementById('connect-btn').addEventListener('click', function () {
     const _t = document.getElementById('connect-token').value;
     const url = document.getElementById('connect-url').value + (_t ? '?api_token=' + _t : '');
