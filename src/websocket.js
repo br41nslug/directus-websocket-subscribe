@@ -20,20 +20,38 @@ export function SubscribeServer(context) {
         error: [], close: []
     };
 
+    const runDirectusApp = (request) => new Promise((resolve, reject) => {
+        if (!self.app) return reject();
+        let count = 0;
+        const response = new ServerResponse(request)
+        self.app(request, response);
+        const interval = setInterval(() => {
+            if (response.writableEnded) {
+                clearInterval(interval);
+                resolve();
+            }
+            if (count > 20) { // should add up to 1 second
+                console.error('max interval reached');
+                clearInterval(interval);
+                reject();
+            }
+            count++;
+        }, 50);
+    });
+
     // bind websocket server to express server
     self.bindExpress = ({ server }) => {
         logger.info(`Websocket listening on ws://localhost:${env.PORT}${WS_PATH}`);
-        server.on('upgrade', (request, socket, head) => {
-            const response = new ServerResponse(request);
+        server.on('upgrade', async (request, socket, head) => {
             // run the request through the app to get accountability
-            this.app(request, response)
+            await runDirectusApp(request);
             if ( ! request.accountability || ( ! env.WEBSOCKET_PUBLIC && ! request.accountability.role)) {
                 logger.info('request denied');
                 socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
                 socket.destroy();
                 return;
             }
-            logger.info('request upgraded');
+            logger.info(`request upgraded for user "${request.accountability.user || 'public'}"`);
             websocketServer.handleUpgrade(request, socket, head, (websocket) => {
                 websocketServer.emit('connection', websocket, request);
             });
@@ -41,7 +59,7 @@ export function SubscribeServer(context) {
     };
 
     self.bindApp = ({ app }) => {
-        this.app = app;
+        self.app = app;
     };
 
     // bind to a client event
