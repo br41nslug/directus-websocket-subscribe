@@ -8,7 +8,7 @@ import { SubscribeServer } from './websocket';
 import { outgoingError, outgoingResponse, parseIncomingMessage } from './message';
 
 // hook wrapper
-export default function registerHook({ action }, context) {
+export default function registerHook({ init, action }, context) {
     const { services, getSchema, database: knex, logger, env } = context;
     const { ItemsService } = services;
     
@@ -24,6 +24,7 @@ export default function registerHook({ action }, context) {
     const evtSub = {};
 
     // hook into server
+    init('app.after', subscribeServer.bindApp);
     action('server.start', subscribeServer.bindExpress);
 
     async function messageGet(ws, message, service) {

@@ -4,8 +4,8 @@
  * 
  * Allows you to subscribe to Directus collection items using a similar syntax as the items API.
  */
+import { ServerResponse } from 'http';
 import { WebSocketServer } from 'ws';
-import { authenticate } from './authenticate';
 
 export function SubscribeServer(context) {
     const self = this || {};
@@ -24,20 +24,24 @@ export function SubscribeServer(context) {
     self.bindExpress = ({ server }) => {
         logger.info(`Websocket listening on ws://localhost:${env.PORT}${WS_PATH}`);
         server.on('upgrade', (request, socket, head) => {
-            // do authentication on the socket connection
-            authenticate(request, context, function next() {
-                if ( ! request.accountability || ( ! env.WEBSOCKET_PUBLIC && ! request.accountability.role)) {
-                    logger.info('request denied');
-                    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-                    socket.destroy();
-                    return;
-                }
-                logger.info('request upgraded');
-                websocketServer.handleUpgrade(request, socket, head, (websocket) => {
-                    websocketServer.emit('connection', websocket, request);
-                });
+            const response = new ServerResponse(request);
+            // run the request through the app to get accountability
+            this.app(request, response)
+            if ( ! request.accountability || ( ! env.WEBSOCKET_PUBLIC && ! request.accountability.role)) {
+                logger.info('request denied');
+                socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+                socket.destroy();
+                return;
+            }
+            logger.info('request upgraded');
+            websocketServer.handleUpgrade(request, socket, head, (websocket) => {
+                websocketServer.emit('connection', websocket, request);
             });
         });
+    };
+
+    self.bindApp = ({ app }) => {
+        this.app = app;
     };
 
     // bind to a client event
