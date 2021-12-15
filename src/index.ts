@@ -77,7 +77,7 @@ export default defineHook(({ init, action }, context) => {
     }
 
     // message handler
-    async function onMessage({ ws, req, msg }) {
+    async function onMessage({ ws, req, msg }: any) {
         const schema = await getSchema();
         let message;
         try {
@@ -107,16 +107,17 @@ export default defineHook(({ init, action }, context) => {
         if ( ! evtSub[collection]) {
             evtSub[collection] = [];
         }
-        evtSub[collection]?.push({ id, socket });
+        evtSub[collection]!.push({ id, socket });
     }
     function unsubscribe(socket: WebSocket) {
         for (const key of Object.keys(evtSub)) {
-            for (let i = evtSub[key].length - 1; i >= 0; i--) {
-                if (evtSub[key][i].socket === socket) {
-                    evtSub[key].splice(i, 1);
-                }
-            }
-        }
+			const sub = evtSub[key] || [];
+			for (let i = sub.length - 1; i >= 0; i--) {
+				if (sub[i]?.socket === socket) {
+					evtSub[key]!.splice(i, 1);
+				}
+			}
+		}
     }
 
     // client events
@@ -124,18 +125,18 @@ export default defineHook(({ init, action }, context) => {
 		logger.info(`client connected`);
     });
     subscribeServer.on('message', onMessage);
-    subscribeServer.on('error', ({ ws }) => {
+    subscribeServer.on('error', ({ ws }: any) => {
         logger.info(`client errored`);
         unsubscribe(ws);
     });
-    subscribeServer.on('close', ({ ws }) => {
+    subscribeServer.on('close', ({ ws }: any) => {
         logger.info(`client left`);
         unsubscribe(ws);
     });
 
     // dispatch event
     function dispatch(collection: string, msg: any) {
-        (evtSub[collection] || []).forEach(({ id, socket }) => {    
+        (evtSub[collection] || []).forEach(({ socket }) => {    
             socket.send(JSON.stringify(msg));
         });
     }

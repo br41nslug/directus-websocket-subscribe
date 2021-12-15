@@ -8,44 +8,66 @@ import { ApiExtensionContext } from '@directus/shared/dist/esm/types';
 import { ServerResponse } from 'http';
 import { WebSocketServer } from 'ws';
 
-export function SubscribeServer(context: ApiExtensionContext) {
-    const self = this || {};
-    const { env, logger } = context;
-    const WS_PATH = env.WEBSOCKET_PATH || '/websocket';
-    const websocketServer = new WebSocketServer({
-		noServer: true,
-		path: WS_PATH,
-	});
-    const evtSub = {
-        connect: [], message: [],
-        error: [], close: []
-    };
+export class SubscribeServer {
+    protected context: ApiExtensionContext;
+    protected app: any; // as far as i know express can't really be typed :(
+    protected evtSub: { [event: string]: Array<any> };
+    public path: string;
+    public server: WebSocketServer;
 
-    const runDirectusApp = (request) => new Promise((resolve, reject) => {
-        if (!self.app) return reject();
-        let count = 0;
-        const response = new ServerResponse(request)
-        self.app(request, response);
-        const interval = setInterval(() => {
-            if (response.writableEnded) {
-                clearInterval(interval);
-                resolve();
-            }
-            if (count > 20) { // should add up to 1 second
-                console.error('max interval reached');
-                clearInterval(interval);
-                reject();
-            }
-            count++;
-        }, 50);
-    });
+    constructor(context: ApiExtensionContext) {
+        const { env } = context;
+        this.context = context;
+        this.path = env.WEBSOCKET_PATH || '/websocket';
+        this.server = new WebSocketServer({
+            noServer: true,
+            path: this.path,
+        });
+        this.evtSub = {
+            connect: [], message: [],
+            error: [], close: []
+        };
+        this.bindEvents();
+    }
+
+    private bindEvents() {
+        this.server.on('connection', (ws, req) => {
+            this.dispatch('connect', { ws, req });
+            ws.addEventListener('message', (msg) => this.dispatch('message', { ws, req, msg }));
+            ws.addEventListener('error', () => this.dispatch('error', { ws, req }));
+            ws.addEventListener('close', () => this.dispatch('close', { ws, req }));
+        });
+    }
+
+    private runDirectusApp(request: any): Promise<void> {
+        const app = this.app;
+        return new Promise((resolve, reject) => {
+            if (!app) return reject();
+            let count = 0;
+            const response = new ServerResponse(request)
+            app(request, response);
+            const interval = setInterval(() => {
+                if (response.writableEnded) {
+                    clearInterval(interval);
+                    resolve();
+                }
+                if (count > 20) { // should add up to 1 second
+                    console.error('max interval reached');
+                    clearInterval(interval);
+                    reject();
+                }
+                count++;
+            }, 50);
+        });
+    }
 
     // bind websocket server to express server
-    self.bindExpress = ({ server }) => {
-        logger.info(`Websocket listening on ws://localhost:${env.PORT}${WS_PATH}`);
-        server.on('upgrade', async (request, socket, head) => {
+    bindExpress({ server }: any) {
+        const { env, logger } = this.context;
+        logger.info(`Websocket listening on ws://localhost:${env.PORT}${this.path}`);
+        server.on('upgrade', async (request: any, socket: any, head: any) => {
             // run the request through the app to get accountability
-            await runDirectusApp(request);
+            await this.runDirectusApp(request);
             if ( ! request.accountability || ( ! env.WEBSOCKET_PUBLIC && ! request.accountability.role)) {
                 logger.info('request denied');
                 socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
@@ -53,45 +75,42 @@ export function SubscribeServer(context: ApiExtensionContext) {
                 return;
             }
             logger.info(`request upgraded for user "${request.accountability.user || 'public'}"`);
-            websocketServer.handleUpgrade(request, socket, head, (websocket) => {
-                websocketServer.emit('connection', websocket, request);
+            this.server.handleUpgrade(request, socket, head, (websocket) => {
+                this.server.emit('connection', websocket, request);
             });
-        });
-    };
-
-    self.bindApp = ({ app }) => {
-        self.app = app;
-    };
-
-    // bind to a client event
-    self.on = (event, callback) => {
-        if ( ! evtSub[event]) return logger.error('Unkown event: '+event);
-        evtSub[event].push(callback);
-    };
-    
-    // broadcast a message to all clients
-    self.broadcast = (message) => {
-        const msg = typeof message === "string" ? message : JSON.stringify(message);
-        websocketServer.clients.forEach(function each(client) {
-            client.send(msg);
-        });
-    };
-
-    // dispatch a specific event
-    function dispatch(event, data) {
-        if ( ! evtSub[event]) return logger.error('Unkown event: '+event);
-        evtSub[event].forEach((callback) => {
-            callback(data);
         });
     }
 
-    // events
-    websocketServer.on('connection', (ws, req) => {
-        dispatch('connect', { ws, req });
-		ws.addEventListener('message', (msg) => dispatch('message', { ws, req, msg }));
-		ws.addEventListener('error', () => dispatch('error', { ws, req }));
-		ws.addEventListener('close', () => dispatch('close', { ws, req }));
-	});
+    bindApp({ app }: any) {
+        this.app = app;
+    };
 
-    return self;
+    // bind to a client event
+    on(event: string, callback: any) {
+        const { logger } = this.context;
+        const sub = this.evtSub;
+        if ( ! sub[event]) return logger.error('Unkown event: '+event);
+        sub[event]?.push(callback);
+    };
+    
+    // broadcast a message to all clients
+    broadcast(message: any) {
+        const msg = typeof message === "string" ? message : JSON.stringify(message);
+        this.server.clients.forEach(function each(client) {
+            client.send(msg);
+        });
+    }
+
+    // dispatch a specific event
+    private dispatch(event: string, data: any) {
+        const { logger } = this.context;
+        const sub = this.evtSub;
+        if ( ! sub[event]) {
+            logger.error('Unkown event: '+event);
+            return;
+        }
+        sub[event]?.forEach((callback) => {
+            callback(data);
+        });
+    }
 }

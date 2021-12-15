@@ -4,19 +4,7 @@
  * 
  * Helper functions for dealing with incoming messages
  */
-
-function parseGlobalParameters(message: any) {
-    let query = {};
-    if (typeof message.query === "object" && !Array.isArray(message.query)) {
-        const queryProps = [ 'fields', 'sort', 'filter', 'limit', 'offset', 'page', 'search', 'group', 'aggregate', 'deep', 'alias' ];
-        queryProps.forEach((prop) => {
-            if ( !! message.query[prop]) {
-                query[prop] = message.query[prop];
-            }
-        });
-    }
-    return query;
-}
+import { Query } from '@directus/shared/dist/esm/types';
 
 // parse incoming message
 export function parseIncomingMessage(msg: any, schema: any) {
@@ -30,7 +18,7 @@ export function parseIncomingMessage(msg: any, schema: any) {
     if ( ! schema.collections[collection]) {
         throw new Error('Collection does not exist in schema');
     }
-    const query = parseGlobalParameters(req);
+    const query: Query = req.query;
     switch (type) {
         case 'GET': return { type, collection, query, uid };
         case 'POST': 
@@ -44,14 +32,20 @@ export function parseIncomingMessage(msg: any, schema: any) {
     }
 }
 
+export type Message = {
+    type: string;
+    data: any;
+    uid?: string;
+}
+
 export function outgoingResponse(data: any, message: any) {
-    const msg = { type: 'RESPONSE', data };
+    const msg: Message = { type: 'RESPONSE', data };
     if (message.uid) msg.uid = message.uid;
     return JSON.stringify(msg);
 }
 
 export function outgoingError(data: any, message: any) {
-    const msg = { type: 'ERROR', data };
+    const msg: Message = { type: 'ERROR', data };
     if (message.uid) msg.uid = message.uid;
     return JSON.stringify(msg);
 }
