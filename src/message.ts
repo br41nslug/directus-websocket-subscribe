@@ -5,7 +5,7 @@
  * Helper functions for dealing with incoming messages
  */
 
-function parseGlobalParameters(message) {
+function parseGlobalParameters(message: any) {
     let query = {};
     if (typeof message.query === "object" && !Array.isArray(message.query)) {
         const queryProps = [ 'fields', 'sort', 'filter', 'limit', 'offset', 'page', 'search', 'group', 'aggregate', 'deep', 'alias' ];
@@ -19,7 +19,7 @@ function parseGlobalParameters(message) {
 }
 
 // parse incoming message
-export function parseIncomingMessage(msg, schema) {
+export function parseIncomingMessage(msg: any, schema: any) {
     const req = JSON.parse(msg.data);
     const type = (req.type || 'fetch').trim().toUpperCase();
     const collection = (req.collection || '').trim().toLowerCase();
@@ -44,13 +44,13 @@ export function parseIncomingMessage(msg, schema) {
     }
 }
 
-export function outgoingResponse(data, message) {
+export function outgoingResponse(data: any, message: any) {
     const msg = { type: 'RESPONSE', data };
     if (message.uid) msg.uid = message.uid;
     return JSON.stringify(msg);
 }
 
-export function outgoingError(data, message) {
+export function outgoingError(data: any, message: any) {
     const msg = { type: 'ERROR', data };
     if (message.uid) msg.uid = message.uid;
     return JSON.stringify(msg);

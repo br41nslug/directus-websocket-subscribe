@@ -21,17 +21,17 @@ export default defineHook(({ init, action }, context) => {
     }
 
     const subscribeServer = new SubscribeServer(context);
-    const evtSub = {};
+    const evtSub: { [collection: string]: Array<{ id: string | null, socket: WebSocket }> } = {};
 
     // hook into server
     init('app.after', subscribeServer.bindApp);
     action('server.start', subscribeServer.bindExpress);
 
-    async function messageGet(ws, message, service) {
+    async function messageGet(ws: WebSocket, message: any, service: any) {
         const result = await service.readByQuery(message.query);
         ws.send(outgoingResponse(result, message));
     }
-    async function messagePost(ws, message, service) {
+    async function messagePost(ws: WebSocket, message: any, service: any) {
         let result;
         if (Array.isArray(message.data)) {
             const keys = await service.createMany(message.data);
@@ -42,7 +42,7 @@ export default defineHook(({ init, action }, context) => {
         }
         ws.send(outgoingResponse(result, message));
     }
-    async function messagePatch(ws, message, service) {
+    async function messagePatch(ws: WebSocket, message: any, service: any) {
         let result;
         if (message.ids) {
             const keys = await service.updateMany(message.ids, message.data);
@@ -55,7 +55,7 @@ export default defineHook(({ init, action }, context) => {
         }
         ws.send(outgoingResponse(result, message));
     }
-    async function messageDelete(ws, message, service) {
+    async function messageDelete(ws: WebSocket, message: any, service: any) {
         let result;
         if (message.ids) {
             await service.deleteMany(message.ids);
@@ -68,7 +68,7 @@ export default defineHook(({ init, action }, context) => {
         }
         ws.send(outgoingResponse(result, message));
     }
-    async function messageSubscribe(ws, message, service) {
+    async function messageSubscribe(ws: WebSocket, message: any, service: any) {
         // if not authorized the read should throw an error
         await service.readByQuery({ fields: ['*'], limit: 1 });
         // subscribe to events if all went well
@@ -103,13 +103,13 @@ export default defineHook(({ init, action }, context) => {
         }
     }
 
-    function subscribe(collection, id, socket) {
+    function subscribe(collection: string, id: string, socket: WebSocket) {
         if ( ! evtSub[collection]) {
             evtSub[collection] = [];
         }
-        evtSub[collection].push({ id, socket });
+        evtSub[collection]?.push({ id, socket });
     }
-    function unsubscribe(socket) {
+    function unsubscribe(socket: WebSocket) {
         for (const key of Object.keys(evtSub)) {
             for (let i = evtSub[key].length - 1; i >= 0; i--) {
                 if (evtSub[key][i].socket === socket) {
@@ -134,7 +134,7 @@ export default defineHook(({ init, action }, context) => {
     });
 
     // dispatch event
-    function dispatch(collection, msg) {
+    function dispatch(collection: string, msg: any) {
         (evtSub[collection] || []).forEach(({ id, socket }) => {    
             socket.send(JSON.stringify(msg));
         });

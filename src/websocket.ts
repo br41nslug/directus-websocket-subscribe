@@ -4,10 +4,11 @@
  * 
  * Allows you to subscribe to Directus collection items using a similar syntax as the items API.
  */
+import { ApiExtensionContext } from '@directus/shared/dist/esm/types';
 import { ServerResponse } from 'http';
 import { WebSocketServer } from 'ws';
 
-export function SubscribeServer(context) {
+export function SubscribeServer(context: ApiExtensionContext) {
     const self = this || {};
     const { env, logger } = context;
     const WS_PATH = env.WEBSOCKET_PATH || '/websocket';
