@@ -1,6 +1,6 @@
 {
 	"name": "directus-websocket-subscribe",
-	"version": "1.2.2",
+	"version": "2.0.0",
 	"author": "brainslug",
 	"keywords": [
 		"directus",
@@ -10,9 +10,8 @@
 	"directus:extension": {
 		"type": "hook",
 		"path": "dist/index.js",
-		"source": "src/index.js",
-		"host": "^9.2.2",
-		"hidden": false
+		"source": "src/index.ts",
+		"host": "^9.2.2"
 	},
 	"scripts": {
 		"build": "directus-extension build",
@@ -21,7 +20,9 @@
 		"docker-stop": "docker-compose down"
 	},
 	"devDependencies": {
-		"@directus/extensions-sdk": "^9.2.2"
+		"@directus/extensions-sdk": "^9.2.2",
+		"@types/node": "^17.0.0",
+		"typescript": "^4.5.4"
 	},
 	"dependencies": {
 		"ws": "^8.3.0"
