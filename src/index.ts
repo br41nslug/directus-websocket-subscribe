@@ -5,8 +5,9 @@
  * Allows you to subscribe to Directus collection items using a similar syntax as the items API.
  */
 import { defineHook } from '@directus/extensions-sdk';
-import { SubscribeServer } from './websocket';
-import { outgoingError, outgoingResponse, parseIncomingMessage } from './message';
+import { SubscribeServer } from './server';
+import { outgoingError, parseIncomingMessage } from './util';
+import { getHandler, patchHandler, postHandler, deleteHandler } from './messages';
 
 export default defineHook(({ init, action }, context) => {
     const { services, getSchema, database: knex, logger, env } = context;
@@ -27,47 +28,6 @@ export default defineHook(({ init, action }, context) => {
     init('app.after', subscribeServer.bindApp);
     action('server.start', subscribeServer.bindExpress);
 
-    async function messageGet(ws: WebSocket, message: any, service: any) {
-        const result = await service.readByQuery(message.query);
-        ws.send(outgoingResponse(result, message));
-    }
-    async function messagePost(ws: WebSocket, message: any, service: any) {
-        let result;
-        if (Array.isArray(message.data)) {
-            const keys = await service.createMany(message.data);
-            result = await service.readMany(keys, message.query || {})
-        } else {
-            const key = await service.createOne(message.data);
-            result = await service.readOne(key, message.query || {});
-        }
-        ws.send(outgoingResponse(result, message));
-    }
-    async function messagePatch(ws: WebSocket, message: any, service: any) {
-        let result;
-        if (message.ids) {
-            const keys = await service.updateMany(message.ids, message.data);
-            result = await service.readMany(keys, message.query);
-        } else if (message.id) {
-            const key = await service.updateOne(message.id, message.data);
-            result = await service.readOne(result);
-        } else {
-            throw new Error("Either 'ids' or 'id' is required for a PATCH request");
-        }
-        ws.send(outgoingResponse(result, message));
-    }
-    async function messageDelete(ws: WebSocket, message: any, service: any) {
-        let result;
-        if (message.ids) {
-            await service.deleteMany(message.ids);
-            result = message.ids;
-        } else if (message.id) {
-            await service.deleteOne(message.id);
-            result = message.id;
-        } else {
-            throw new Error("Either 'ids' or 'id' is required for a PATCH request");
-        }
-        ws.send(outgoingResponse(result, message));
-    }
     async function messageSubscribe(ws: WebSocket, message: any, service: any) {
         // if not authorized the read should throw an error
         await service.readByQuery({ fields: ['*'], limit: 1 });
@@ -91,10 +51,10 @@ export default defineHook(({ init, action }, context) => {
                 knex, schema, accountability: req.accountability
             });
             switch (message.type) {
-                case 'GET': return await messageGet(ws, message, service);
-                case 'POST': return await messagePost(ws, message, service);
-                case 'PATCH': return await messagePatch(ws, message, service);
-                case 'DELETE': return await messageDelete(ws, message, service);
+                case 'GET': return await getHandler(ws, message, service);
+                case 'POST': return await postHandler(ws, message, service);
+                case 'PATCH': return await patchHandler(ws, message, service);
+                case 'DELETE': return await deleteHandler(ws, message, service);
                 case 'SUBSCRIBE': return await messageSubscribe(ws, message, service);
                 default: throw new Error('Invalid message type! get, post, patch, delete or subscribe expected');
             }
