@@ -10,8 +10,9 @@
 	"directus:extension": {
 		"type": "hook",
 		"path": "dist/index.js",
-		"source": "src/index.ts",
-		"host": "^9.2.2"
+		"source": "src/index.js",
+		"host": "^9.4.0",
+		"hidden": false
 	},
 	"scripts": {
 		"build": "directus-extension build",
@@ -20,10 +21,7 @@
 		"docker-stop": "docker-compose down"
 	},
 	"devDependencies": {
-		"@directus/extensions-sdk": "^9.2.2",
-		"@types/node": "^17.0.0",
-		"@types/ws": "^8.2.2",
-		"typescript": "^4.5.4"
+		"@directus/extensions-sdk": "^9.4.0"
 	},
 	"dependencies": {
 		"ws": "^8.3.0"
