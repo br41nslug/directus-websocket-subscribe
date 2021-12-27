@@ -15,7 +15,6 @@ services:
       DB_CLIENT: 'sqlite3'
       DB_FILENAME: './data.db'
 
-      WEBSOCKET_ENABLED: 'true'
       WEBSOCKET_PUBLIC: 'false'
 
       ADMIN_EMAIL: 'admin@example.com'

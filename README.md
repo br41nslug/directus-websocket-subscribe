@@ -50,10 +50,18 @@ The update objects will look like this: `{"action":"update","payload":{"test":"n
 
 > Disclaimer: this is absolutely still in alpha status and should not get near any sort of production environment!
 
+# Configuration
+This extension can be configured in a couple of ways. Either via a custom hook, environment variables or by editing this extension.
+
+## Custom filter hook
+- `websocket.config`
+
 ## Environment Variables
+settings done by environment variables will override custom hook settings!
 - `WEBSOCKET_ENABLED: 'true' or 'false'`\
   Enables the websocket! If set to false all functions will be aborted
 - `WEBSOCKET_PUBLIC: 'true' or 'false'`\
   If set to `true` the public role will be allowed to connect to the websocket
 - `WEBSOCKET_PATH: '/websocket'`\
   You can change the websocket path using this setting.
+

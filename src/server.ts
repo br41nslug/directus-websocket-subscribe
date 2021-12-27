@@ -7,6 +7,7 @@
 import { ApiExtensionContext } from '@directus/shared/dist/esm/types';
 import { ServerResponse } from 'http';
 import { WebSocketServer } from 'ws';
+import { v4 as uuid } from 'uuid';
 
 export class SubscribeServer {
     protected context: ApiExtensionContext;
