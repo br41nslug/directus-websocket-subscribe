@@ -7,25 +7,23 @@
 import { defineHook } from '@directus/extensions-sdk';
 // import { outgoingError, parseIncomingMessage } from './util';
 // import { getHandler, patchHandler, postHandler, deleteHandler } from './messages';
-// import { SubscribeServer } from './server';
+import { SubscribeServer } from './server';
 import { getConfig } from './config';
 
 export default defineHook(async ({ init, action }, context) => {
-    const { services, getSchema, database: knex, logger, env } = context;
-    const { ItemsService } = services;
-
+    const { logger } = context;
     const config = await getConfig(context);
-    
-    // if ( ! env.WEBSOCKET_PUBLIC) {
-    //     logger.info("Websocket Subscribe Extension is set to private, only valid authentication will be accepted. (WEBSOCKET_PUBLIC is 'false')");
-    // }
+    const subscribeServer = new SubscribeServer(config, context);
 
-    // const subscribeServer = new SubscribeServer(context);
+    if ( ! config.public) {
+        logger.debug('Websocket Subscribe Extension is set to private, only valid keys will be accepted.');
+    }
+
     // const evtSub: { [collection: string]: Array<{ id: string | null, socket: WebSocket }> } = {};
 
-    // // hook into server
-    // init('app.after', subscribeServer.bindApp);
-    // action('server.start', subscribeServer.bindExpress);
+    // hook into server
+    init('app.after', subscribeServer.bindApp);
+    action('server.start', subscribeServer.bindExpress);
 
     // async function messageSubscribe(ws: WebSocket, message: any, service: any) {
     //     // if not authorized the read should throw an error

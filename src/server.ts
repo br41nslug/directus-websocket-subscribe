@@ -5,38 +5,45 @@
  * Allows you to subscribe to Directus collection items using a similar syntax as the items API.
  */
 import { ApiExtensionContext } from '@directus/shared/dist/esm/types';
-import { ServerResponse } from 'http';
+import { ServerResponse, IncomingMessage } from 'http';
 import { WebSocketServer } from 'ws';
-import { v4 as uuid } from 'uuid';
+import { WebsocketClient } from './client';
+import { EventDispatcher } from './events';
+import type { DirectusWebsocketConfig } from './types';
 
-export class SubscribeServer {
+export class SubscribeServer extends EventDispatcher {
     protected context: ApiExtensionContext;
+    protected config: DirectusWebsocketConfig;
     protected app: any; // as far as i know express can't really be typed :(
-    protected evtSub: { [event: string]: Array<any> };
-    public path: string;
+    public clients: Set<WebsocketClient>;
     public server: WebSocketServer;
 
-    constructor(context: ApiExtensionContext) {
-        const { env } = context;
+    constructor(config: DirectusWebsocketConfig, context: ApiExtensionContext) {
+        super(['connected', 'message', 'close']);
         this.context = context;
-        this.path = env.WEBSOCKET_PATH || '/websocket';
+        this.config = config;
+        this.clients = new Set();
         this.server = new WebSocketServer({
             noServer: true,
-            path: this.path,
+            path: this.config.path,
         });
-        this.evtSub = {
-            connect: [], message: [],
-            error: [], close: []
-        };
-        this.bindEvents();
+        this.server.on('connection', this.newClient);
     }
 
-    private bindEvents() {
-        this.server.on('connection', (ws, req) => {
-            this.dispatch('connect', { ws, req });
-            ws.addEventListener('message', (msg) => this.dispatch('message', { ws, req, msg }));
-            ws.addEventListener('error', () => this.dispatch('error', { ws, req }));
-            ws.addEventListener('close', () => this.dispatch('close', { ws, req }));
+    private newClient(ws: WebSocket, req: IncomingMessage) {
+        const client = new WebsocketClient(ws, req);
+        this.clients.add(client);
+        this.dispatch('connected', { client });
+        client.on('message', (msg) => {
+            this.dispatch('message', { client, msg });
+        });
+        client.on('error', () => {
+            this.dispatch('close', { client });
+            this.clients.delete(client);
+        });
+        client.on('close', () => {
+            this.dispatch('close', { client });
+            this.clients.delete(client);
         });
     }
 
@@ -62,10 +69,9 @@ export class SubscribeServer {
         });
     }
 
-    // bind websocket server to express server
-    bindExpress({ server }: any) {
+    public bindExpress({ server }: any) {
         const { env, logger } = this.context;
-        logger.info(`Websocket listening on ws://localhost:${env.PORT}${this.path}`);
+        logger.info(`Websocket listening on ws://localhost:${env.PORT}${this.config.path}`);
         server.on('upgrade', async (request: any, socket: any, head: any) => {
             // run the request through the app to get accountability
             await this.runDirectusApp(request);
@@ -82,36 +88,14 @@ export class SubscribeServer {
         });
     }
 
-    bindApp({ app }: any) {
+    public bindApp({ app }: any) {
         this.app = app;
-    };
+    }
 
-    // bind to a client event
-    on(event: string, callback: any) {
-        const { logger } = this.context;
-        const sub = this.evtSub;
-        if ( ! sub[event]) return logger.error('Unkown event: '+event);
-        sub[event]?.push(callback);
-    };
-    
-    // broadcast a message to all clients
-    broadcast(message: any) {
+    public broadcast(message: any) {
         const msg = typeof message === "string" ? message : JSON.stringify(message);
         this.server.clients.forEach(function each(client) {
             client.send(msg);
-        });
-    }
-
-    // dispatch a specific event
-    private dispatch(event: string, data: any) {
-        const { logger } = this.context;
-        const sub = this.evtSub;
-        if ( ! sub[event]) {
-            logger.error('Unkown event: '+event);
-            return;
-        }
-        sub[event]?.forEach((callback) => {
-            callback(data);
         });
     }
 }

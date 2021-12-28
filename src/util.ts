@@ -5,6 +5,7 @@
  * Helper functions for dealing with incoming messages
  */
 import { Query } from '@directus/shared/dist/esm/types';
+import { WebsocketMessage } from './types';
 
 // parse incoming message
 export function parseIncomingMessage(msg: any, schema: any) {
@@ -32,20 +33,15 @@ export function parseIncomingMessage(msg: any, schema: any) {
     }
 }
 
-export type Message = {
-    type: string;
-    data: any;
-    uid?: string;
-}
 
 export function outgoingResponse(data: any, message: any) {
-    const msg: Message = { type: 'RESPONSE', data };
+    const msg: WebsocketMessage = { type: 'RESPONSE', data };
     if (message.uid) msg.uid = message.uid;
     return JSON.stringify(msg);
 }
 
 export function outgoingError(data: any, message: any) {
-    const msg: Message = { type: 'ERROR', data };
+    const msg: WebsocketMessage = { type: 'ERROR', data };
     if (message.uid) msg.uid = message.uid;
     return JSON.stringify(msg);
 }
