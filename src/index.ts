@@ -40,17 +40,17 @@ export default defineHook(async ({ init, action }, context) => {
     // hook into item manipulation actions
     action('items.create', ({ payload, key, collection }) => {
         const msg = JSON.stringify({ action: 'items.create', payload, key, collection });
-        logger.info('create - ' + msg);
+        logger.debug('[ WS ] event create - ' + msg);
         subscribeHandler.dispatch(collection, { action: 'create', payload, key, collection });
     });
     action('items.update', ({ payload, keys, collection }) => {
         const msg = JSON.stringify({ action: 'items.update', payload, keys, collection });
-        logger.info('update - '+msg);
+        logger.info('[ WS ] event update - '+msg);
         subscribeHandler.dispatch(collection, { action: 'update', payload, keys, collection });
     });
     action('items.delete', ({ payload, collection }) => {
         const msg = JSON.stringify({ action: 'items.delete', payload, collection });
-        logger.info('delete - '+ msg);
+        logger.info('[ WS ] event delete - '+ msg);
         subscribeHandler.dispatch(collection, { action: 'delete', payload, collection });
     });
 });
