@@ -4,46 +4,57 @@
  * 
  * Allows you to subscribe to Directus collection items using a similar syntax as the items API.
  */
-import { ApiExtensionContext } from '@directus/shared/dist/esm/types';
+import { ApiExtensionContext } from '@directus/shared/types';
 import { ServerResponse, IncomingMessage } from 'http';
 import { WebSocketServer } from 'ws';
 import { WebsocketClient } from './client';
-import { EventDispatcher } from './events';
-import type { DirectusWebsocketConfig } from './types';
+import { MessageHandler, MessageHandlerConstructor } from './messages';
+import type { DirectusWebsocketConfig, WebsocketMessage } from './types';
+import { parseIncomingMessage } from './util';
 
-export class SubscribeServer extends EventDispatcher {
+export class DirectusWebsocketServer {
     protected context: ApiExtensionContext;
     protected config: DirectusWebsocketConfig;
-    protected app: any; // as far as i know express can't really be typed :(
+    protected handlers: Set<MessageHandler>;
+    public app: any; // as far as i know express can't really be typed :(
     public clients: Set<WebsocketClient>;
     public server: WebSocketServer;
 
     constructor(config: DirectusWebsocketConfig, context: ApiExtensionContext) {
-        super(['connected', 'message', 'close']);
         this.context = context;
         this.config = config;
         this.clients = new Set();
+        this.handlers = new Set();
         this.server = new WebSocketServer({
             noServer: true,
             path: this.config.path,
         });
-        this.server.on('connection', this.newClient);
+        this.server.on('connection', (socket: WebSocket, request: IncomingMessage) => {
+            this.newClient(socket, request);
+        });
     }
 
     private newClient(ws: WebSocket, req: IncomingMessage) {
+        const { logger, getSchema } = this.context;
         const client = new WebsocketClient(ws, req);
+        client.on('message', async ({ client: _c, msg }) => {
+            logger.debug(`[ WS-${client.id} ] client message - ${JSON.stringify(msg)}`);
+            const message = parseIncomingMessage(msg, await getSchema());
+            this.runHandlers('message', client, message);
+        });
+        client.on('closed', () => {
+            logger.debug(`[ WS-${client.id} ] client disconnected`);
+            this.clients.delete(client);
+            this.runHandlers('closed', client);
+        });
+        logger.debug(`[ WS-${client.id} ] client connected`);
         this.clients.add(client);
-        this.dispatch('connected', { client });
-        client.on('message', (msg) => {
-            this.dispatch('message', { client, msg });
-        });
-        client.on('error', () => {
-            this.dispatch('close', { client });
-            this.clients.delete(client);
-        });
-        client.on('close', () => {
-            this.dispatch('close', { client });
-            this.clients.delete(client);
+        this.runHandlers('connected', client);
+    }
+
+    private runHandlers(event: string, client: WebsocketClient, message?: WebsocketMessage) {
+        this.handlers.forEach((handler) => {
+            handler.dispatchEvent(event, client, message);
         });
     }
 
@@ -69,33 +80,29 @@ export class SubscribeServer extends EventDispatcher {
         });
     }
 
-    public bindExpress({ server }: any) {
-        const { env, logger } = this.context;
-        logger.info(`Websocket listening on ws://localhost:${env.PORT}${this.config.path}`);
-        server.on('upgrade', async (request: any, socket: any, head: any) => {
-            // run the request through the app to get accountability
-            await this.runDirectusApp(request);
-            if ( ! request.accountability || ( ! env.WEBSOCKET_PUBLIC && ! request.accountability.role)) {
-                logger.info('request denied');
-                socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-                socket.destroy();
-                return;
-            }
-            logger.info(`request upgraded for user "${request.accountability.user || 'public'}"`);
-            this.server.handleUpgrade(request, socket, head, (websocket) => {
-                this.server.emit('connection', websocket, request);
-            });
+    public async upgradeRequest(request: any, socket: any, head: any) {
+        const { logger } = this.context;
+        // run the request through the app to get accountability
+        await this.runDirectusApp(request);
+        if ( ! request.accountability || ( ! this.config.public && ! request.accountability.role)) {
+            logger.info('request denied');
+            socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+            socket.destroy();
+            return;
+        }
+        logger.info(`request upgraded for user "${request.accountability.user || 'public'}"`);
+        this.server.handleUpgrade(request, socket, head, (websocket) => {
+            this.server.emit('connection', websocket, request);
         });
     }
 
-    public bindApp({ app }: any) {
-        this.app = app;
-    }
-
-    public broadcast(message: any) {
-        const msg = typeof message === "string" ? message : JSON.stringify(message);
-        this.server.clients.forEach(function each(client) {
-            client.send(msg);
-        });
+    public register(HandlerClass: MessageHandlerConstructor): MessageHandler {
+        const { logger } = this.context;
+        const handler = new HandlerClass(this.config, this.context);
+        if (handler.isEnabled()) {
+            logger.debug('[ WS ] handler registered: ' + HandlerClass.name);
+            this.handlers.add(handler);
+        }
+        return handler;
     }
 }

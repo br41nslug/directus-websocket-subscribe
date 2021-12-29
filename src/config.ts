@@ -4,12 +4,19 @@
  * 
  * Manages server configuration.
  */
-import { ApiExtensionContext } from '@directus/shared/dist/esm/types';
+import { ApiExtensionContext } from '@directus/shared/types';
 import { DirectusWebsocketConfig } from './types';
 
 export const defaultWebsocketConfig: DirectusWebsocketConfig = {
     public: false,
     path: '/websocket',
+    system: {
+        get: true,
+        post: true,
+        patch: true,
+        delete: true,
+        subscribe: true
+    }
 };
 
 export async function getConfig({ emitter, logger, env }: ApiExtensionContext): Promise<DirectusWebsocketConfig> {
