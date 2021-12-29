@@ -2,7 +2,7 @@ version: '3'
 services:
   directus:
     container_name: directus
-    image: directus/directus:9.4.0
+    image: directus/directus:9.4.1
     ports:
       - 8055:8055
     volumes:
@@ -11,6 +11,8 @@ services:
     environment:
       KEY: '[ FILL UUID ]'
       SECRET: '[ FILL UUID ]'
+      TELEMETRY: 'false'
+      LOG_LEVEL: 'debug'
 
       DB_CLIENT: 'sqlite3'
       DB_FILENAME: './data.db'
