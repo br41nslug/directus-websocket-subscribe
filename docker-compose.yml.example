@@ -1,8 +1,7 @@
 version: '3'
 services:
   directus:
-    container_name: directus
-    image: directus/directus:9.4.1
+    image: directus/directus:9.4.2
     ports:
       - 8055:8055
     volumes:
