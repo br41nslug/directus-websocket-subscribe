@@ -4,8 +4,9 @@
  * 
  * SUBSCRIBE request handler
  */
-import { Query } from '@directus/shared/types';
+import { Query,  } from '@directus/shared/types';
 import { ClientHandler, WebsocketMessage, WebsocketClient } from '../types';
+import { Logger } from 'pino';
 
 export const subscribeHandler: ClientHandler = ({ system: cfg }, context) => {
     if ( ! cfg || ! cfg.subscribe) return;
@@ -39,6 +40,12 @@ export const subscribeHandler: ClientHandler = ({ system: cfg }, context) => {
 			}
 		}
     }
+    function dispatch(collection: string, data: any) {
+        subscriptions[collection]?.forEach(({ client }) => {    
+            const msg = { type: 'SUBSCRIPTION', ...data };
+            client.socket.send(JSON.stringify(msg));
+        });
+    }
     return {
         parseMessage(message: WebsocketMessage, request: any) {
             if (message.type !== "SUBSCRIBE") return;
@@ -66,11 +73,18 @@ export const subscribeHandler: ClientHandler = ({ system: cfg }, context) => {
         onClose(client: WebsocketClient) {
             unsubscribe(client);
         },
-        dispatch(collection: string, data: any) {
-            subscriptions[collection]?.forEach(({ client }) => {    
-                const msg = { type: 'SUBSCRIPTION', ...data };
-                client.socket.send(JSON.stringify(msg));
-            });
-        },
+        dispatch,
+        buildDispatcher(action: any, logger: Logger) {
+            return (event: string, mutator?: (args:any)=>any) => {
+                action(event, (args: any) => {
+                    let message = mutator ? mutator(args) : {};
+                    message.action = event.split('.').pop();
+                    message.collection = args.collection;
+                    message.payload = args.payload;
+                    logger.debug(`[ WS ] event ${event} - ${JSON.stringify(message)}`);
+                    dispatch(message.collection, message);
+                });
+            };
+        }
     };
 };

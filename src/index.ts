@@ -8,6 +8,7 @@ import { defineHook } from '@directus/extensions-sdk';
 import { getHandler, postHandler, patchHandler, deleteHandler, subscribeHandler } from './handlers';
 import { DirectusWebsocketServer } from './server';
 import { getConfig } from './config';
+// import { hookAction } from './util';
 
 export default defineHook(async ({ init, action }, context) => {
     const { logger } = context;
@@ -39,19 +40,13 @@ export default defineHook(async ({ init, action }, context) => {
     ]).then(([app, server]) => wsServer.hookServer(app, server));
 
     // hook into item manipulation actions
-    action('items.create', ({ payload, key, collection }) => {
-        const msg = JSON.stringify({ action: 'items.create', payload, key, collection });
-        logger.debug('[ WS ] event create - ' + msg);
-        subscription.dispatch(collection, { action: 'create', payload, key, collection });
-    });
-    action('items.update', ({ payload, keys, collection }) => {
-        const msg = JSON.stringify({ action: 'items.update', payload, keys, collection });
-        logger.info('[ WS ] event update - '+msg);
-        subscription.dispatch(collection, { action: 'update', payload, keys, collection });
-    });
-    action('items.delete', ({ payload, collection }) => {
-        const msg = JSON.stringify({ action: 'items.delete', payload, collection });
-        logger.info('[ WS ] event delete - '+ msg);
-        subscription.dispatch(collection, { action: 'delete', payload, collection });
+    const dispatchAction = subscription.buildDispatcher(action, logger);
+    [ // listen to all the system collections too
+        'items', 'activity', 'collections', 'fields', 'folders', 'permissions',
+        'presets', 'relations', 'revisions', 'roles', 'settings', 'users', 'webhooks'
+    ].forEach((collection) => {
+        dispatchAction(collection+'.create', ({ key }: any) => ({ key }));
+        dispatchAction(collection+'.update', ({ keys }: any) => ({ keys }));
+        dispatchAction(collection+'.delete');
     });
 });
