@@ -1,3 +1,9 @@
+/**
+ * Websocket Subscribe Extension
+ * Designed for Directus 9
+ * 
+ * GET request handler
+ */
 import { ClientHandler, WebsocketClient, WebsocketMessage } from '../types';
 import { outgoingResponse } from '../util';
 

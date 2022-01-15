@@ -2,7 +2,7 @@
  * Websocket Subscribe Extension
  * Designed for Directus 9
  * 
- * Allows you to subscribe to Directus collection items using a similar syntax as the items API.
+ * Integration with Directus usign a custom hook extension.
  */
 import { defineHook } from '@directus/extensions-sdk';
 import { getHandler, postHandler, patchHandler, deleteHandler, subscribeHandler } from './handlers';
@@ -11,7 +11,14 @@ import { getConfig } from './config';
 
 export default defineHook(async ({ init, action }, context) => {
     const { logger } = context;
-    const config = await getConfig(context);
+    const config = await getConfig({
+        public: false,
+        path: '/websocket',
+        system: { 
+            get: true, post: true, patch: true,
+            delete: true, subscribe: true
+        }
+    }, context);
     const wsServer = new DirectusWebsocketServer(config, context);
 
     if ( ! config.public) {

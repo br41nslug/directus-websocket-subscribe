@@ -1,3 +1,9 @@
+/**
+ * Websocket Subscribe Extension
+ * Designed for Directus 9
+ * 
+ * SUBSCRIBE request handler
+ */
 import { Query } from '@directus/shared/types';
 import { ClientHandler, WebsocketMessage, WebsocketClient } from '../types';
 

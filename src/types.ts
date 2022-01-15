@@ -20,11 +20,11 @@ export type DirectusWebsocketConfig = {
     public: boolean;
     path: string;
     system: {
-        get: boolean;
-        post: boolean;
-        patch: boolean;
-        delete: boolean;
-        subscribe: boolean;
+        get?: boolean;
+        post?: boolean;
+        patch?: boolean;
+        delete?: boolean;
+        subscribe?: boolean;
     } | false;
 };
 

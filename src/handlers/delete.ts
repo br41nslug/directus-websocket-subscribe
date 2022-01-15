@@ -1,3 +1,9 @@
+/**
+ * Websocket Subscribe Extension
+ * Designed for Directus 9
+ * 
+ * DELETE request handler
+ */
 import { ClientHandler, WebsocketMessage, WebsocketClient } from '../types';
 import { outgoingResponse } from '../util';
 
