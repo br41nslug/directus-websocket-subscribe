@@ -69,15 +69,21 @@ var connected = false, ws;
 function addLog(msg) {
     document.querySelector('#log pre').prepend(`- ${msg}\n`);
 }
+function uuidv4() {
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  );
+}
 function sendMessage(msg) {
     if (ws && connected) {
+        msg.uid = uuidv4();
         addLog('Sending message: '+JSON.stringify(msg, null, 2));
         ws.send(JSON.stringify(msg));
     }
 }
 document.getElementById('connect-btn').addEventListener('click', function () {
     const _t = document.getElementById('connect-token').value;
-    const url = document.getElementById('connect-url').value + (_t ? '?api_token=' + _t : '');
+    const url = document.getElementById('connect-url').value + (_t ? '?access_token=' + _t : '');
     addLog(`Connecting to: ${url}`);
     ws = new WebSocket(url);
     ws.addEventListener('open', function (event) {
@@ -99,6 +105,7 @@ document.getElementById('connect-btn').addEventListener('click', function () {
     ws.addEventListener('message', function (event) {
         addLog('Received: '+JSON.stringify(JSON.parse(event.data), null, 2));
     });
+    document.getElementById('connect-btn')
 });
 document.getElementById('send-btn').addEventListener('click', function () {
     try {
@@ -107,6 +114,9 @@ document.getElementById('send-btn').addEventListener('click', function () {
     } catch (err) {
         addLog('Invalid JSON in message! '+err);
     }
+});
+document.getElementById('close-btn').addEventListener('click', function () {
+    ws && ws.close();
 });
 </script>
 </body>
