@@ -5,32 +5,23 @@
  * Helper functions for dealing with incoming messages
  */
 import { Query } from '@directus/shared/types';
+import { ServerResponse } from 'http';
 import { WebsocketMessage } from './types';
 
 // parse incoming message
-export function parseIncomingMessage(msg: any, schema: any): WebsocketMessage {
-    const req = JSON.parse(msg.data);
-    const type = (req.type || 'fetch').trim().toUpperCase();
-    const collection = (req.collection || '').trim().toLowerCase();
-    const uid = req.uid || false;
+export function parseIncomingMessage(message: any, schema: any): WebsocketMessage {
+    const type = (message.type || '').trim().toUpperCase();
+    const collection = (message.collection || '').trim().toLowerCase();
     if (typeof collection !== "string" || collection.length === 0) {
         throw new Error('Collection is required');
     }
     if ( ! schema.collections[collection]) {
         throw new Error('Collection does not exist in schema');
     }
-    const query: Query = req.query;
-    switch (type) {
-        case 'GET': return { type, collection, query, uid };
-        case 'POST': 
-            return { type, collection, query, data: req.data, uid };
-        case 'PATCH':
-            return { type, collection, query, data: req.data, ids: req.ids || false, id: req.id || false, uid };
-        case 'DELETE':
-        case 'SUBSCRIBE': 
-            return { type, collection, query, id: req.id || false, ids: req.ids || false };
-        default: throw new Error('Invalid message type! get, post, patch, delete or subscribe expected');
-    }
+    return { 
+        type, collection, uid: message.uid || false,
+        query: message.query as Query,
+    };
 }
 
 export function outgoingResponse(data: any, message?: WebsocketMessage): string {
@@ -43,4 +34,25 @@ export function outgoingError(data: any, message?: WebsocketMessage): string {
     const msg: WebsocketMessage = { type: 'ERROR', data };
     if (message?.uid) msg.uid = message.uid;
     return JSON.stringify(msg);
+}
+
+export function runExpress(app: any, request: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+        if (!app) return reject();
+        let count = 0;
+        const response = new ServerResponse(request)
+        app(request, response);
+        const interval = setInterval(() => {
+            if (response.writableEnded) {
+                clearInterval(interval);
+                resolve(request);
+            }
+            if (count > 20) { // should add up to 1 second
+                console.error('max interval reached');
+                clearInterval(interval);
+                reject();
+            }
+            count++;
+        }, 50);
+    });
 }

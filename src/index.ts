@@ -5,13 +5,12 @@
  * Allows you to subscribe to Directus collection items using a similar syntax as the items API.
  */
 import { defineHook } from '@directus/extensions-sdk';
-import { DeleteHandler, GetHandler, PatchHandler, PostHandler } from './messages';
+import { getHandler, postHandler, patchHandler, deleteHandler, subscribeHandler } from './handlers';
 import { DirectusWebsocketServer } from './server';
 import { getConfig } from './config';
-import { SubscribeHandler } from './messages/subscribe';
 
 export default defineHook(async ({ init, action }, context) => {
-    const { logger, env } = context;
+    const { logger } = context;
     const config = await getConfig(context);
     const wsServer = new DirectusWebsocketServer(config, context);
 
@@ -20,37 +19,32 @@ export default defineHook(async ({ init, action }, context) => {
     }
 
     // connect message handlers
-    wsServer.register(GetHandler);
-    wsServer.register(PostHandler);
-    wsServer.register(PatchHandler);
-    wsServer.register(DeleteHandler);
-    const subscribeHandler = wsServer.register(SubscribeHandler) as SubscribeHandler;
-
-    // hook into server
-    init('app.after', ({ app }) => {
-        wsServer.app = app;
-    });
-    action('server.start', ({ server }) => {
-        logger.info(`Websocket listening on ws://localhost:${env.PORT}${config.path}`);
-        server.on('upgrade', (request: any, socket: any, head: any) => {
-            wsServer.upgradeRequest(request, socket, head);
-        });
-    });
+    wsServer.register(getHandler);
+    wsServer.register(postHandler);
+    wsServer.register(patchHandler);
+    wsServer.register(deleteHandler);
+    const subscription = wsServer.register(subscribeHandler);
+    
+    // hook into server start events
+    Promise.all([
+        new Promise(r => init('app.after', ({ app }) => r(app))),
+        new Promise(r => action('server.start', ({ server }) => r(server))),
+    ]).then(([app, server]) => wsServer.hookServer(app, server));
 
     // hook into item manipulation actions
     action('items.create', ({ payload, key, collection }) => {
         const msg = JSON.stringify({ action: 'items.create', payload, key, collection });
         logger.debug('[ WS ] event create - ' + msg);
-        subscribeHandler.dispatch(collection, { action: 'create', payload, key, collection });
+        subscription.dispatch(collection, { action: 'create', payload, key, collection });
     });
     action('items.update', ({ payload, keys, collection }) => {
         const msg = JSON.stringify({ action: 'items.update', payload, keys, collection });
         logger.info('[ WS ] event update - '+msg);
-        subscribeHandler.dispatch(collection, { action: 'update', payload, keys, collection });
+        subscription.dispatch(collection, { action: 'update', payload, keys, collection });
     });
     action('items.delete', ({ payload, collection }) => {
         const msg = JSON.stringify({ action: 'items.delete', payload, collection });
         logger.info('[ WS ] event delete - '+ msg);
-        subscribeHandler.dispatch(collection, { action: 'delete', payload, collection });
+        subscription.dispatch(collection, { action: 'delete', payload, collection });
     });
 });
