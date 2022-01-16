@@ -5,6 +5,14 @@ Currently this simply adds a websocket server on the `/websocket` path (this can
 
 You can test the websocket using the test html page [example/test.html](example/test.html).
 
+## Features
+- Follows directus permissions
+- Websocket driven queries
+- Websocket based subscriptions
+- Subscription to directus system collections
+- Environment based configuration
+- Custom hook based configuration
+
 ## Installation
 - Download or fork the repository
 - Install the requirements\
