@@ -3,4 +3,4 @@ node_modules
 dist/*
 !dist/empty
 docker-compose.yml
-data.db
+*.db
