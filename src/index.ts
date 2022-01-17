@@ -8,10 +8,9 @@ import { defineHook } from '@directus/extensions-sdk';
 import { getHandler, postHandler, patchHandler, deleteHandler, subscribeHandler } from './handlers';
 import { DirectusWebsocketServer } from './server';
 import { getConfig } from './config';
-// import { hookAction } from './util';
 
 export default defineHook(async ({ init, action }, context) => {
-    const { logger } = context;
+    const { logger, emitter } = context;
     const config = await getConfig({
         public: false,
         path: '/websocket',
@@ -32,6 +31,13 @@ export default defineHook(async ({ init, action }, context) => {
     wsServer.register(patchHandler);
     wsServer.register(deleteHandler);
     const subscription = wsServer.register(subscribeHandler);
+
+    // allow registration of handlers via the custom emitter
+    await emitter.emitFilter('websocket.register', (init: any) => {
+        if (typeof init === "function") {
+            wsServer.register(init);
+        }
+    });
     
     // hook into server start events
     Promise.all([
