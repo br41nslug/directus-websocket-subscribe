@@ -81,7 +81,7 @@ export const subscribeHandler: ClientHandler = ({ system: cfg }, context) => {
                     message.action = event.split('.').pop();
                     message.collection = args.collection;
                     message.payload = args.payload;
-                    logger.debug(`[ WS ] event ${event} - ${JSON.stringify(message)}`);
+                    logger.debug(`[ WS ] event ${event} `/*- ${JSON.stringify(message)}`*/);
                     dispatch(message.collection, message);
                 });
             };
