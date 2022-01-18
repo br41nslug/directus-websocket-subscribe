@@ -12,6 +12,7 @@ You can test the websocket using the test html page [example/test.html](example/
 - Subscription to directus system collections
 - Environment based configuration
 - Custom hook based configuration
+- Custom hook based message handlers!
 
 ## Installation
 - Download or fork the repository
