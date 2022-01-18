@@ -1,7 +1,6 @@
 module.exports = function registerHook(_, { emitter }) {
     emitter.onFilter('websocket.register', (registerHandler) => {
-        registerHandler(({ system: cfg }, context) => {
-            if ( ! cfg || ! cfg.get) return;
+        registerHandler((_, context) => {
             const { 
                 services: { ItemsService },
                 database: knex, getSchema
