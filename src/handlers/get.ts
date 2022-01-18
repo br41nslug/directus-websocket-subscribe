@@ -7,7 +7,7 @@
 import { ClientHandler, WebsocketClient, WebsocketMessage } from '../types';
 import { outgoingResponse } from '../util';
 
-export const getHandler: ClientHandler = ({ system: cfg }, context) => {
+export const getHandler: ClientHandler = ({ core: cfg }, context) => {
     if ( ! cfg || ! cfg.get) return;
     const { 
         services: { ItemsService },

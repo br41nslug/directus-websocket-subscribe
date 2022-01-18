@@ -19,7 +19,8 @@ export type WebsocketMessage = {
 export type DirectusWebsocketConfig = {
     public: boolean;
     path: string;
-    system: {
+    system: boolean;
+    core: {
         get?: boolean;
         post?: boolean;
         patch?: boolean;

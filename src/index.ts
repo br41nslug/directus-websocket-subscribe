@@ -14,7 +14,8 @@ export default defineHook(async ({ init, action }, context) => {
     const config = await getConfig({
         public: false,
         path: '/websocket',
-        system: { 
+        system: false,
+        core: { 
             get: true, post: true, patch: true,
             delete: true, subscribe: true
         }
@@ -25,7 +26,7 @@ export default defineHook(async ({ init, action }, context) => {
         logger.debug('Websocket Subscribe Extension is set to private, only valid keys will be accepted.');
     }
 
-    // connect message handlers
+    // connect core message handlers
     wsServer.register(getHandler);
     wsServer.register(postHandler);
     wsServer.register(patchHandler);
@@ -33,11 +34,7 @@ export default defineHook(async ({ init, action }, context) => {
     const subscription = wsServer.register(subscribeHandler);
 
     // allow registration of handlers via the custom emitter
-    await emitter.emitFilter('websocket.register', (init: any) => {
-        if (typeof init === "function") {
-            wsServer.register(init);
-        }
-    });
+    await emitter.emitFilter('websocket.register', (init: any) => wsServer.register(init));
     
     // hook into server start events
     Promise.all([
@@ -47,10 +44,10 @@ export default defineHook(async ({ init, action }, context) => {
 
     // hook into item manipulation actions
     const dispatchAction = subscription.buildDispatcher(action, logger);
-    [ // listen to all the system collections too
+    (config.system ? [ // listen to all the system collections too
         'items', 'activity', 'collections', 'fields', 'folders', 'permissions',
         'presets', 'relations', 'revisions', 'roles', 'settings', 'users', 'webhooks'
-    ].forEach((collection) => {
+    ] : ['items']).forEach((collection) => {
         dispatchAction(collection+'.create', ({ key }: any) => ({ key }));
         dispatchAction(collection+'.update', ({ keys }: any) => ({ keys }));
         dispatchAction(collection+'.delete');

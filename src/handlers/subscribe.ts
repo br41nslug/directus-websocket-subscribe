@@ -8,7 +8,7 @@ import { Query,  } from '@directus/shared/types';
 import { ClientHandler, WebsocketMessage, WebsocketClient } from '../types';
 import { Logger } from 'pino';
 
-export const subscribeHandler: ClientHandler = ({ system: cfg }, context) => {
+export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
     if ( ! cfg || ! cfg.subscribe) return;
     const { 
         services: { ItemsService },

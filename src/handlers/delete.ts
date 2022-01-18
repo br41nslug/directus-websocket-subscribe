@@ -7,7 +7,7 @@
 import { ClientHandler, WebsocketMessage, WebsocketClient } from '../types';
 import { outgoingResponse } from '../util';
 
-export const deleteHandler: ClientHandler = ({ system: cfg }, context) => {
+export const deleteHandler: ClientHandler = ({ core: cfg }, context) => {
     if ( ! cfg || ! cfg.delete) return;
     const { 
         services: { ItemsService },
