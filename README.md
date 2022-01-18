@@ -29,7 +29,7 @@ You can test the websocket using the test html page [example/test.html](example/
 If the `WEBSOCKET_PUBLIC` variable is set to `true` you'll be allowed to connect to the websocket without any api token. If no token was used the public permissions will apply for the duration of the open connection. If a token is supplied the roles/permissions associated with that token will apply for the duration of the connection.
 Like the API the token can be supplied as a header `Authorization: Bearer [TOKEN]` or as get parameter `ws://localhost:8055/websocket?access_token=[TOKEN]`.
 
-## Message Handlers
+# Message Handlers
 All built-in handlers except `SUBSCRIBE` allow for a `uid` to be sent with the request which will be injected into the `RESULT` so you can identify which response belongs to which request.
 
 When you hit an error (usually permissions) it will return an object like this:
@@ -40,6 +40,10 @@ When you hit an error (usually permissions) it will return an object like this:
 }
 ```
 
+## Custome handlers
+It is possible to extend this extension using another custom extension! Yes thats a lot of extending xD For now the code in this example will have to speak for itself: [examples/custom-integration/index.js](examples/custom-integration/index.js). I havent gotten around to compatibility with Typescript yet etc... But it basically accepts the untyped versions of the core handlers.
+
+## Core handlers
 > Note: singletons are not supported yet.
 
 ### GET Handler
@@ -212,7 +216,8 @@ This extension can be configured in a couple of ways. Either via a custom hook, 
 {
     "public": false,
     "path": "/websocket",
-    "system": { 
+    "system": false,
+    "core": { 
         "get": true,
         "post": true,
         "patch": true,
@@ -231,6 +236,7 @@ Because custom extension have access to their own event emitter now i just had t
 export default (_, { logger, emitter }) => {
   emitter.onFilter('websocket.config', (cfg) => {
     cfg.path = '/test'; // Change the websocket path
+    cfg.public = true; // Enable public connections to the websocket
     cfg.system.delete = false; // Disable the delete handler
     return cfg;
   });
@@ -241,7 +247,8 @@ export default (_, { logger, emitter }) => {
 module.exports = function registerHook(_, { logger, emitter }) {
   emitter.onFilter('websocket.config', (cfg) => {
     cfg.path = '/test'; // Change the websocket path
-    cfg.system.delete = false; // Disable the delete handler
+    cfg.system = true; // Enable system collection events
+    cfg.core.delete = false; // Disable the delete handler
     return cfg;
   });
 };
@@ -253,14 +260,18 @@ All these settings can be done by environment variables too and these will overr
   If set to `true` the public role will be allowed to connect to the websocket
 - `WEBSOCKET_PATH: '/websocket'`\
   You can change the websocket path using this setting.
-- `WEBSOCKET_SYSTEM_GET: 'true' or 'false'`\
-  Enables/Disables the built-in GET handler
-- `WEBSOCKET_SYSTEM_POST: 'true' or 'false'`\
-  Enables/Disables the built-in POST handler
-- `WEBSOCKET_SYSTEM_PATCH: 'true' or 'false'`\
-  Enables/Disables the built-in PATCH handler
-- `WEBSOCKET_SYSTEM_DELETE: 'true' or 'false'`\
-  Enables/Disables the built-in DELETE handler
-- `WEBSOCKET_SYSTEM_SUBSCRIBE: 'true' or 'false'`\
-  Enables/Disables the built-in SUBSCRIBE handler
+- `WEBSOCKET_SYSTEM: 'true' or 'false'`\
+  Enables/Disables subscribe events for system collections.
+- `WEBSOCKET_CORE: 'true' or 'false'`\
+  Enables/Disables all built-in handlers.
+- `WEBSOCKET_CORE_GET: 'true' or 'false'`\
+  Enables/Disables the built-in GET handler.
+- `WEBSOCKET_CORE_POST: 'true' or 'false'`\
+  Enables/Disables the built-in POST handler.
+- `WEBSOCKET_CORE_PATCH: 'true' or 'false'`\
+  Enables/Disables the built-in PATCH handler.
+- `WEBSOCKET_CORE_DELETE: 'true' or 'false'`\
+  Enables/Disables the built-in DELETE handler.
+- `WEBSOCKET_CORE_SUBSCRIBE: 'true' or 'false'`\
+  Enables/Disables the built-in SUBSCRIBE handler.
 

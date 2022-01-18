@@ -8,6 +8,8 @@ services:
     volumes:
       - ./data.db:/directus/data.db
       - ./dist:/directus/extensions/hooks/websocket-subscribe
+      - ./examples/websocket-configuration:/directus/extensions/hooks/websocket-configuration
+      - ./examples/custom-integration:/directus/extensions/hooks/websocket-custom-integration
     environment:
       KEY: '[ FILL UUID ]'
       SECRET: '[ FILL UUID ]'
