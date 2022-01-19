@@ -24,9 +24,6 @@ You can test the websocket using the test html page [example/test.html](example/
   `mv dist extensions/hooks/directus-websocket-subscribe`
 - Restart your Directus instance
 
-> Disclaimer: this is absolutely still in alpha status and should not get near any sort of production environment!
-
-
 # Configuration
 This extension can be configured in a couple of ways. Either via a custom hook, environment variables or by editing this extension directly.
 
