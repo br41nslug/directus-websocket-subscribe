@@ -271,6 +271,61 @@ The subscribe type will require the `read` permissions on the collection you wan
 }
 ```
 
+### Subscription filter
+Using a custom hook you can manipulate the response sent by the built-in SUBSCRIBE handler. The `websocket.subscribe.beforeSend` filter callback provides the message it would send as a parameter and the dispatcher will send the returned value to all clients subcribed to the original event.\
+Note: You cannot manipulate which clients the message is sent to\
+**Example using directus-extension-sdk**
+```js
+export default (_, { services, database: knex, getSchema, emitter }) => {
+  emitter.onFilter('websocket.subscribe.beforeSend', async (message) => {
+    if (message.action === 'update') {
+      // read the full item when an update occurs
+      const service = new services.ItemsService(message.collection, {
+        knex, schema: await getSchema(), accountability: { admin: true }
+      });
+      message.payload = await service.readMany(message.keys);
+    }
+    return message;
+  });
+};
+```
+**Example using plain JS**
+```js
+module.exports = function registerHook(_, { 
+  services, database: knex, getSchema, emitter
+}) {
+  emitter.onFilter('websocket.subscribe.beforeSend', async (message) => {
+    if (message.action === 'update') {
+      // read the full item when an update occurs
+      const service = new services.ItemsService(message.collection, {
+        knex, schema: await getSchema(), accountability: { admin: true }
+      });
+      message.payload = await service.readMany(message.keys);
+    }
+    return message;
+  });
+};
+```
+**Example resulting response**
+```json
+{
+  "type": "SUBSCRIPTION",
+  "action": "update",
+  "collection": "test",
+  "payload": [
+    {
+      "id": 1,
+      "test": "update 123",
+      "status": "published",
+      "sort": null
+    }
+  ],
+  "keys": [
+    "1"
+  ]
+}
+```
+
 ## Custom handlers
 It is possible to extend this extension using another custom extension! Yes thats a lot of extending! This allow you to add custom callbacks for handling all websocket client events and sending custom messages over the websocket.
 

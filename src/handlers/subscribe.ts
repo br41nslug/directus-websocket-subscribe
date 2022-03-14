@@ -13,7 +13,7 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
     const { 
         services: { ItemsService },
         database: knex, getSchema,
-        logger
+        logger, emitter
     } = context;
     const subscriptions: Record<string, Set<{
         id?: string | number;
@@ -76,13 +76,14 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
         dispatch,
         buildDispatcher(action: any, logger: Logger) {
             return (event: string, mutator?: (args:any)=>any) => {
-                action(event, (args: any) => {
+                action(event, async (args: any) => {
                     let message = mutator ? mutator(args) : {};
                     message.action = event.split('.').pop();
                     message.collection = args.collection;
                     message.payload = args.payload;
                     logger.debug(`[ WS ] event ${event} `/*- ${JSON.stringify(message)}`*/);
-                    dispatch(message.collection, message);
+                    const msg = await emitter.emitFilter('websocket.subscribe.beforeSend', message);
+                    dispatch(message.collection, msg);
                 });
             };
         }
