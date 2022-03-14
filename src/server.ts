@@ -74,7 +74,6 @@ export class DirectusWebsocketServer {
         const schema = await this.context.getSchema();
         const message = parseIncomingMessage(request, schema);
         let wasHandled = false;
-        console.log(message);
         for (const { parseMessage, onMessage } of this.handlers) {
             if ( ! onMessage) continue;
             const _message = !parseMessage ? 
