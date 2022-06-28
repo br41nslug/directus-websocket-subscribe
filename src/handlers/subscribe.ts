@@ -11,7 +11,7 @@ import { Logger } from 'pino';
 export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
     if ( ! cfg || ! cfg.subscribe) return;
     const { 
-        services: { ItemsService },
+        services: { ItemsService, AuthorizationService },
         database: knex, getSchema,
         logger, emitter
     } = context;
@@ -40,11 +40,21 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
 			}
 		}
     }
-    function dispatch(collection: string, data: any) {
-        subscriptions[collection]?.forEach(({ client }) => {    
-            const msg = { type: 'SUBSCRIPTION', ...data };
-            client.socket.send(JSON.stringify(msg));
-        });
+    async function dispatch(collection: string, data: any) {
+        const subs = subscriptions[collection] ?? new Set();
+        const msg = { type: 'SUBSCRIPTION', ...data };
+        for (const { client } of subs) {
+            const authService = new AuthorizationService({
+                knex, schema: await getSchema(),
+                accountability: client.accountability
+            });
+            try {
+                await authService.checkAccess('read', collection, data.keys);
+                client.socket.send(JSON.stringify(msg));
+            } catch (err: any) { 
+                // logger.debug('[ WS ] permission error', err);
+            }
+        }
     }
     return {
         parseMessage(message: WebsocketMessage, request: any) {
