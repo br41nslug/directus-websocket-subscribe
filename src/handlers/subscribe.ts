@@ -45,9 +45,14 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
             });
             try {
                 // get the payload based on the provided query
-                const payload = await service.readMany(data.keys, query);
+                const keys = data.key ? [ data.key ] : data.keys;
+                let payload = data.action !== "delete" ? 
+                    await service.readMany(keys, query) : data.payload;
                 if (payload.length > 0) {
-                    const msg = { type: 'SUBSCRIPTION', ...data, payload };
+                    if (data.key) payload = payload[0];
+                    const msg = await emitter.emitFilter('websocket.subscribe.beforeSend', { 
+                        type: 'SUBSCRIPTION', ...data, payload 
+                    });
                     client.socket.send(JSON.stringify(msg));
                 }
             } catch (err: any) { 
@@ -90,8 +95,7 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
                     message.collection = args.collection;
                     message.payload = args.payload;
                     logger.debug(`[ WS ] event ${event} `/*- ${JSON.stringify(message)}`*/);
-                    const msg = await emitter.emitFilter('websocket.subscribe.beforeSend', message);
-                    dispatch(message.collection, msg);
+                    dispatch(message.collection, message);
                 });
             };
         }
