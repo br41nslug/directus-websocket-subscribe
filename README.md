@@ -5,13 +5,14 @@ Currently this simply adds a websocket server on the `/websocket` path (this can
 
 You can test the websocket using the test html page [example/test.html](example/test.html) or any other tool able to connect to a websocket.
 
-> Tested with Directus 9.12.2
+> Tested with Directus 9.13.0
 
 ## Features
 - Follows directus permissions
 - Websocket driven queries
 - Websocket based subscriptions
 - Subscription to directus system collections
+- Query based subscription responses
 - Environment based configuration
 - Custom hook based configuration
 - Custom hook based message handlers
@@ -226,15 +227,20 @@ The query object follows the `ItemService.deleteOne` or `ItemService.deleteMany`
 {
   "type": "subscribe",
   "collection": "test"
+  "query"?: {
+    "fields": ["id", "fieldA", "relation.*"]
+  }
 }
 ```
-The subscribe type will require the `read` permissions on the collection you want to receive events for.\
+The subscribe type will require the `read` permissions on the collection you want to receive events for. The `query` here is optional but allows you to define what kind of informations you'd like to receive with your subscription acception the same query option `ItemsService.readMany(ids, query)` does.\
+> Note: it is possible to get no results/messages on events due to the filters defined in the query
 **Hooked actions**
 - `items.create`
 - `items.update`
 - `items.delete`
 
 **Response**
+> Note: response payload will depend on the provided query and default to the full accessible object
 ```json
 {
   "type": "SUBSCRIPTION",
@@ -251,9 +257,11 @@ The subscribe type will require the `read` permissions on the collection you wan
 {
   "type": "SUBSCRIPTION",
   "action": "update",
-  "payload": {
-    "name": "test123456"
-  },
+  "payload": [
+    {
+      "name": "test123456"
+    }
+  ],
   "keys": [
     "1"
   ],

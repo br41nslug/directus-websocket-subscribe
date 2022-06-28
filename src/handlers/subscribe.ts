@@ -11,7 +11,7 @@ import { Logger } from 'pino';
 export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
     if ( ! cfg || ! cfg.subscribe) return;
     const { 
-        services: { ItemsService, AuthorizationService },
+        services: { ItemsService },
         database: knex, getSchema,
         logger, emitter
     } = context;
@@ -21,12 +21,8 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
         client: WebsocketClient
     }>> = {};
     function subscribe(collection: string, client: WebsocketClient, conf: { id?: string, query?: Query } = {}) {
-        if ( ! subscriptions[collection]) {
-            subscriptions[collection] = new Set();
-        }
-        subscriptions[collection]?.add({
-            ...conf, client
-        });
+        if ( ! subscriptions[collection]) subscriptions[collection] = new Set();
+        subscriptions[collection]?.add({ ...conf, client });
     }
     function unsubscribe(client: WebsocketClient) {
         for (const key of Object.keys(subscriptions)) {
@@ -42,16 +38,25 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
     }
     async function dispatch(collection: string, data: any) {
         const subs = subscriptions[collection] ?? new Set();
-        const msg = { type: 'SUBSCRIPTION', ...data };
-        for (const { client } of subs) {
-            const authService = new AuthorizationService({
-                knex, schema: await getSchema(),
-                accountability: client.accountability
+        for (const { client, query={} } of subs) {
+            const schema = await getSchema({ accountability: client.accountability });
+            const service = new ItemsService(collection, {
+                knex, schema, accountability: client.accountability
             });
             try {
-                await authService.checkAccess('read', collection, data.keys);
-                client.socket.send(JSON.stringify(msg));
+                // get the payload based on the provided query
+                const keys = data.key ? [ data.key ] : data.keys;
+                let payload = data.action !== "delete" ? 
+                    await service.readMany(keys, query) : data.payload;
+                if (payload.length > 0) {
+                    if (data.key) payload = payload[0];
+                    const msg = await emitter.emitFilter('websocket.subscribe.beforeSend', { 
+                        type: 'SUBSCRIPTION', ...data, payload 
+                    });
+                    client.socket.send(JSON.stringify(msg));
+                }
             } catch (err: any) { 
+                // ignore these permission errors
                 // logger.debug('[ WS ] permission error', err);
             }
         }
@@ -64,17 +69,15 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
             return message;
         },
         async onMessage(client: WebsocketClient, message: WebsocketMessage) {
-            const service = new ItemsService(message.collection, {
+            const collection = message.collection!;
+            const service = new ItemsService(collection, {
                 knex, schema: await getSchema(),
                 accountability: client.accountability
             });
             // if not authorized the read should throw an error
-            await service.readByQuery({ fields: ['*'], limit: 1 });
+            await service.readByQuery({ ...(message.query || {}), limit: 1 });
             // subscribe to events if all went well
-            subscribe(message.collection || '', client, {
-                id: message.id,
-                query: message.query,
-            });
+            subscribe(collection, client, { id: message.id, query: message.query });
             logger.info(`subscribed - ${message.collection} #${message.id}`);
         },
         onError(client: WebsocketClient) {
@@ -92,8 +95,7 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
                     message.collection = args.collection;
                     message.payload = args.payload;
                     logger.debug(`[ WS ] event ${event} `/*- ${JSON.stringify(message)}`*/);
-                    const msg = await emitter.emitFilter('websocket.subscribe.beforeSend', message);
-                    dispatch(message.collection, msg);
+                    dispatch(message.collection, message);
                 });
             };
         }
