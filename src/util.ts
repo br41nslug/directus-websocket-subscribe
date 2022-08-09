@@ -9,19 +9,23 @@ import { ServerResponse } from 'http';
 import { WebsocketMessage } from './types';
 
 // parse incoming message
-export function parseIncomingMessage(message: any, schema: any): WebsocketMessage {
+export function parseIncomingMessage(message: Record<string, any>, schema: any): WebsocketMessage {
     const type = (message.type || '').trim().toUpperCase();
-    const collection = (message.collection || '').trim().toLowerCase();
-    if (typeof collection !== "string" || collection.length === 0) {
-        throw new Error('Collection is required');
-    }
-    if ( ! schema.collections[collection]) {
-        throw new Error('Collection does not exist in schema');
-    }
-    return { 
-        type, collection, uid: message.uid || false,
+    let msg: WebsocketMessage = { 
+        type, uid: message.uid || false,
         query: message.query as Query,
-    };
+    }
+    if (message.collection) {
+        const collection = message.collection.trim().toLowerCase();
+        if (typeof collection !== "string" || collection.length === 0) {
+            throw new Error('Collection is required');
+        }
+        if ( ! schema.collections[collection]) {
+            throw new Error('Collection does not exist in schema');
+        }
+        msg.collection = collection;
+    }
+    return msg;
 }
 
 export function outgoingResponse(data: any, message?: WebsocketMessage): string {
