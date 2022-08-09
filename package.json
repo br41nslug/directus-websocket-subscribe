@@ -13,7 +13,7 @@
 		"type": "hook",
 		"path": "dist/index.js",
 		"source": "src/index.ts",
-		"host": "^9.14.5",
+		"host": "^9.15.1",
 		"hidden": false
 	},
 	"scripts": {
@@ -23,8 +23,8 @@
 		"docker-stop": "docker-compose down"
 	},
 	"devDependencies": {
-		"@directus/extensions-sdk": "^9.14.4",
-		"@directus/shared": "^9.14.5",
+		"@directus/extensions-sdk": "^9.15.1",
+		"@directus/shared": "^9.15.1",
 		"@types/uuid": "^8.3.4",
 		"@types/ws": "^8.5.3"
 	},
