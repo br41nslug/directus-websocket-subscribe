@@ -76,13 +76,15 @@ export class DirectusWebsocketServer {
         let wasHandled = false;
         for (const { parseMessage, onMessage } of this.handlers) {
             if ( ! onMessage) continue;
-            const _message = !parseMessage ? 
-                message : parseMessage(message, request);
-            if ( !! _message) {
-                await onMessage(client, _message);
-                wasHandled = true;
-                break;
-            }
+            try {
+                const _message = !parseMessage ? 
+                    message : parseMessage(message, request);
+                if ( !! _message) {
+                    await onMessage(client, _message);
+                    wasHandled = true;
+                    break;
+                }
+            } catch {}
         }
         if ( ! wasHandled) {
             throw new Error('Invalid message type! Either get, post, patch, delete or subscribe expected');
