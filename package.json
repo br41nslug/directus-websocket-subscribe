@@ -13,18 +13,20 @@
 		"type": "hook",
 		"path": "dist/index.js",
 		"source": "src/index.ts",
-		"host": "^9.17.0",
+		"host": "^9.19.2",
 		"hidden": false
 	},
 	"scripts": {
 		"build": "directus-extension build",
 		"docker": "docker-compose up -d",
+		"build-remote": "directus-extension build && copy dist\\index.js Y:\\web\\chat-demo\\websocket-subscribe\\index.js",
 		"dev-build": "directus-extension build && docker-compose restart directus",
 		"docker-stop": "docker-compose down"
 	},
 	"devDependencies": {
-		"@directus/extensions-sdk": "^9.17.0",
-		"@directus/shared": "^9.17.0",
+		"@directus/extensions-sdk": "^9.19.2",
+		"@directus/shared": "^9.19.2",
+		"@types/pino": "^7.0.5",
 		"@types/uuid": "^8.3.4",
 		"@types/ws": "^8.5.3"
 	},
