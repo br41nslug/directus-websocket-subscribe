@@ -2,7 +2,7 @@ version: '3'
 services:
   directus:
     container_name: directus-websocket-test
-    image: directus/directus:9.19.2
+    image: directus/directus:9.21.0
     ports:
       - 8055:8055
     volumes:

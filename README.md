@@ -5,7 +5,7 @@ Currently this simply adds a websocket server on the `/websocket` path (this can
 
 You can test the websocket using the test html page [example/test.html](example/test.html) or any other tool able to connect to a websocket.
 
-> Tested with Directus 9.19.2
+> Tested with Directus 9.21.0
 
 ## Features
 - Follows directus permissions
