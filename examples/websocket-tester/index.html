@@ -76,7 +76,7 @@ function uuidv4() {
 }
 function sendMessage(msg) {
     if (ws && connected) {
-        msg.uid = uuidv4();
+        !msg.uid && (msg.uid = uuidv4());
         addLog('Sending message: '+JSON.stringify(msg, null, 2));
         ws.send(JSON.stringify(msg));
     }
