@@ -4,7 +4,7 @@
  * 
  * SUBSCRIBE request handler
  */
-import { Query,  } from '@directus/shared/types';
+import { Query } from '@directus/shared/types';
 import { ClientHandler, WebsocketMessage, WebsocketClient } from '../types';
 import { Logger } from 'pino';
 
@@ -16,11 +16,12 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
         logger, emitter
     } = context;
     const subscriptions: Record<string, Set<{
+        uid?: string,
         id?: string | number;
         query?: Query;
         client: WebsocketClient
     }>> = {};
-    function subscribe(collection: string, client: WebsocketClient, conf: { id?: string, query?: Query } = {}) {
+    function subscribe(collection: string, client: WebsocketClient, conf: Record<string, any> = {}) {
         if ( ! subscriptions[collection]) subscriptions[collection] = new Set();
         subscriptions[collection]?.add({ ...conf, client });
     }
@@ -38,7 +39,7 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
     }
     async function dispatch(collection: string, data: any) {
         const subs = subscriptions[collection] ?? new Set();
-        for (const { client, query={} } of subs) {
+        for (const { client, query={}, uid } of subs) {
             const schema = await getSchema({ accountability: client.accountability });
             const service = new ItemsService(collection, {
                 knex, schema, accountability: client.accountability
@@ -53,6 +54,7 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
                     const msg = await emitter.emitFilter('websocket.subscribe.beforeSend', { 
                         type: 'SUBSCRIPTION', ...data, payload 
                     });
+                    if (uid) msg.uid = uid;
                     client.socket.send(JSON.stringify(msg));
                 }
             } catch (err: any) { 
@@ -77,7 +79,9 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
             // if not authorized the read should throw an error
             await service.readByQuery({ ...(message.query || {}), limit: 1 });
             // subscribe to events if all went well
-            subscribe(collection, client, { id: message.id, query: message.query });
+            const sub: Record<string, any> = { id: message.id, query: message.query };
+            if (message?.uid) sub.uid = message.uid;
+            subscribe(collection, client, sub);
             logger.info(`subscribed - ${message.collection} #${message.id}`);
         },
         onError(client: WebsocketClient) {
