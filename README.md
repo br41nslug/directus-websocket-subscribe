@@ -230,6 +230,7 @@ The query object follows the `ItemService.deleteOne` or `ItemService.deleteMany`
   "query"?: {
     "fields": ["id", "fieldA", "relation.*"]
   }
+  "uid"?: "identifier"
 }
 ```
 The subscribe type will require the `read` permissions on the collection you want to receive events for. The `query` here is optional but allows you to define what kind of informations you'd like to receive with your subscription acception the same query option `ItemsService.readMany(ids, query)` does.\
@@ -278,6 +279,15 @@ The subscribe type will require the `read` permissions on the collection you wan
   "collection": "test"
 }
 ```
+#### UNSUBSCRIBE
+**Request**
+```json
+{
+  "type": "unsubscribe",
+  "uid"?: "identifier"
+}
+```
+You can unsubscribe to a specific subscription, by the provided `uid` when subscribing, or unsubscribe from all by leaving the `uid` empty.
 
 ### Subscription filter
 Using a custom hook you can manipulate the response sent by the built-in SUBSCRIBE handler. The `websocket.subscribe.beforeSend` filter callback provides the message it would send as a parameter and the dispatcher will send the returned value to all clients subcribed to the original event.\

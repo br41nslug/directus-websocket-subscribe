@@ -25,13 +25,13 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
         if ( ! subscriptions[collection]) subscriptions[collection] = new Set();
         subscriptions[collection]?.add({ ...conf, client });
     }
-    function unsubscribe(client: WebsocketClient) {
+    function unsubscribe(client: WebsocketClient, uid?: string|false|undefined) {
         for (const key of Object.keys(subscriptions)) {
 			const subs = Array.from(subscriptions[key] || []);
 			for (let i = subs.length - 1; i >= 0; i--) {
                 const sub = subs[i];
                 if ( ! sub) continue;
-				if (sub.client === client) {
+				if (sub.client === client && (!uid || sub.uid === uid)) {
 					subscriptions[key]?.delete(sub);
 				}
 			}
@@ -65,12 +65,13 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
     }
     return {
         parseMessage(message: WebsocketMessage, request: any) {
-            if (message.type !== "SUBSCRIBE") return;
-            message.ids = request.ids || false;
-            message.id = request.id || false;
+            if (!["SUBSCRIBE","UNSUBSCRIBE"].includes(message.type)) return;
+            message.ids = request?.ids || false;
+            message.id = request?.id || false;
             return message;
         },
         async onMessage(client: WebsocketClient, message: WebsocketMessage) {
+            if (message.type === "UNSUBSCRIBE") return unsubscribe(client, message?.uid);
             const collection = message.collection!;
             const service = new ItemsService(collection, {
                 knex, schema: await getSchema(),
