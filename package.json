@@ -1,6 +1,6 @@
 {
-	"name": "directus-websocket-subscribe",
-	"version": "3.0.1",
+	"name": "directus-extension-websocket-subscribe",
+	"version": "3.0.2",
 	"author": "brainslug",
 	"keywords": [
 		"directus",
