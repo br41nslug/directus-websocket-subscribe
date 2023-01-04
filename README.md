@@ -18,6 +18,11 @@ You can test the websocket using the test html page [example/test.html](example/
 - Custom hook based message handlers
 
 ## Installation
+
+The package is published to npm:
+`npm install directus-extension-websocket-subscribe`
+
+**Manual Installation**
 - Download or fork the repository
 - Install the requirements\
   `npm install`
