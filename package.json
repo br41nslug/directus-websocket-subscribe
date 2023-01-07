@@ -1,6 +1,6 @@
 {
 	"name": "directus-extension-websocket-subscribe",
-	"version": "3.0.4",
+	"version": "3.0.5",
 	"author": "brainslug",
 	"keywords": [
 		"directus",
@@ -32,5 +32,10 @@
 	"dependencies": {
 		"uuid": "^9.0.0",
 		"ws": "^8.11.0"
-	}
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/br41nslug/directus-websocket-subscribe.git"
+	},
+	"license": "MIT"
 }
