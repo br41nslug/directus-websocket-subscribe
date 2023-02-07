@@ -11,7 +11,6 @@ import type {
   ClientHandler,
   DirectusWebsocketConfig,
   WebsocketClient,
-  WebsocketMessage,
 } from "./types";
 import { outgoingError, parseIncomingMessage, runExpress } from "./util";
 const uuid = require("uuid");
