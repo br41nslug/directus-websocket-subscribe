@@ -16,14 +16,13 @@ export function parseIncomingMessage(message: Record<string, any>, schema: any):
         query: message.query as Query,
     }
     if (message.collection) {
-        const collection = message.collection.trim().toLowerCase();
-        if (typeof collection !== "string" || collection.length === 0) {
+        if (typeof message.collection !== "string" || message.collection.length === 0) {
             throw new Error('Collection is required');
         }
-        if ( ! schema.collections[collection]) {
+        if ( ! schema.collections[message.collection]) {
             throw new Error('Collection does not exist in schema');
         }
-        msg.collection = collection;
+        msg.collection = message.collection;
     }
     return msg;
 }
