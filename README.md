@@ -32,6 +32,8 @@ The package is published to npm:
   `mv dist extensions/hooks/directus-websocket-subscribe`
 - Restart your Directus instance
 
+(For now the ESM build needs to be done with the main branch)
+
 # Configuration
 This extension can be configured in a couple of ways. Either via a custom hook, environment variables or by editing this extension directly.
 

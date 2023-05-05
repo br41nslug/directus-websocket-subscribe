@@ -4,7 +4,7 @@
  * 
  * Helper functions for dealing with incoming messages
  */
-import { Query } from '@directus/shared/types';
+import { Query } from '@directus/types';
 import { ServerResponse } from 'http';
 import { WebsocketMessage } from './types';
 

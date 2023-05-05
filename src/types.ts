@@ -4,7 +4,7 @@
  * 
  * Typescript types collection
  */
-import { Query, Accountability, ApiExtensionContext } from '@directus/shared/types';
+import type { ActionHandler, EventContext, FilterHandler, InitHandler, Query, Accountability, ApiExtensionContext as AEC } from '@directus/types';
 
 export type WebsocketMessage = {
     type: string;
@@ -45,5 +45,27 @@ export type ClientEventContext = {
 
 export type ClientHandler = (
     config: DirectusWebsocketConfig,
-    context: ApiExtensionContext
+    context: ApiExtensionContext,
 ) => ClientEventContext | void;
+
+export type ExtensionEmitter = {
+    emitFilter<T>(
+        event: string | string[],
+        payload: T,
+        meta: Record<string, any>,
+        context: EventContext
+    ): Promise<T>;
+    emitAction(event: string | string[], meta: Record<string, any>, context: EventContext): void;
+    emitInit(event: string, meta: Record<string, any>): Promise<void>;
+    onFilter(event: string, handler: FilterHandler): void;
+    onAction(event: string, handler: ActionHandler): void;
+    onInit(event: string, handler: InitHandler): void;
+    offFilter(event: string, handler: FilterHandler): void;
+    offAction(event: string, handler: ActionHandler): void;
+    offInit(event: string, handler: InitHandler): void;
+    offAll(): void;
+};
+
+export type ApiExtensionContext = AEC & {
+    emitter: ExtensionEmitter
+};

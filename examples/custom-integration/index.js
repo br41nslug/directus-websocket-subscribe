@@ -1,4 +1,4 @@
-module.exports = function registerHook(_, { emitter }) {
+export default function registerHook(_, { emitter }) {
     emitter.onFilter('websocket.register', (registerHandler) => {
         registerHandler((_, context) => {
             const { 
@@ -24,4 +24,4 @@ module.exports = function registerHook(_, { emitter }) {
             };
         });
     });
-};
+}

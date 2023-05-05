@@ -4,11 +4,11 @@
  * 
  * Allows you to subscribe to Directus collection items using a similar syntax as the items API.
  */
-import { ApiExtensionContext, Accountability } from '@directus/shared/types';
+import { Accountability } from '@directus/types';
 import { WebSocketServer } from 'ws';
-import type { ClientEventContext, ClientHandler, DirectusWebsocketConfig, WebsocketClient, WebsocketMessage } from './types';
+import type { ClientEventContext, ClientHandler, DirectusWebsocketConfig, WebsocketClient, ApiExtensionContext } from './types';
 import { outgoingError, parseIncomingMessage, runExpress } from './util';
-const uuid = require('uuid');
+import { nanoid } from 'nanoid'
 
 export class DirectusWebsocketServer {
     protected context: ApiExtensionContext;
@@ -34,7 +34,7 @@ export class DirectusWebsocketServer {
     private newClient(ws: WebSocket, req: any) {
         const { logger } = this.context;
         const client: WebsocketClient = {
-            id: uuid.v4(), socket: ws,
+            id: nanoid(), socket: ws,
             accountability: req.accountability as Accountability
         };
         ws.addEventListener('open', (evt: Event) => {
@@ -104,9 +104,11 @@ export class DirectusWebsocketServer {
                 return;
             }
             logger.info(`request upgraded for user "${request.accountability.user || 'public'}"`);
+            try {
             this.server.handleUpgrade(request, socket, head, (websocket) => {
                 this.server.emit('connection', websocket, request);
             });
+        } catch(e){console.error(e)}
         });
     }
 

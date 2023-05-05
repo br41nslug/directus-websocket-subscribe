@@ -4,14 +4,13 @@
  * 
  * Manages server configuration.
  */
-import { ApiExtensionContext } from '@directus/shared/types';
-import { DirectusWebsocketConfig } from './types';
+import { DirectusWebsocketConfig, ApiExtensionContext } from './types';
 
 export async function getConfig(
     defaultWebsocketConfig: DirectusWebsocketConfig,
     { emitter, logger, env }: ApiExtensionContext
 ): Promise<DirectusWebsocketConfig> {
-    let config: DirectusWebsocketConfig = await emitter.emitFilter('websocket.config', defaultWebsocketConfig);
+    let config = await emitter.emitFilter<DirectusWebsocketConfig>('websocket.config', defaultWebsocketConfig, {}, {} as any);
     logger.debug('[ WS ] added extension config overrides - ' + JSON.stringify(config));
     if ('WEBSOCKET_PUBLIC' in env) config.public = !!env.WEBSOCKET_PUBLIC;
     if ('WEBSOCKET_PATH' in env) config.path = env.WEBSOCKET_PATH;

@@ -1,6 +1,6 @@
 {
 	"name": "directus-extension-websocket-subscribe",
-	"version": "3.0.11",
+	"version": "3.1.11",
 	"author": "brainslug",
 	"keywords": [
 		"directus",
@@ -13,8 +13,7 @@
 		"type": "hook",
 		"path": "dist/index.js",
 		"source": "src/index.ts",
-		"host": "^10.0.0",
-		"hidden": false
+		"host": "^10.0.0"
 	},
 	"scripts": {
 		"build": "directus-extension build",
@@ -24,13 +23,15 @@
 	},
 	"devDependencies": {
 		"@directus/extensions-sdk": "^10.0.0",
-		"@directus/shared": "^9.24.0",
+		"@types/node": "^18.16.3",
 		"@types/pino": "^7.0.5",
-		"@types/uuid": "^9.0.1",
-		"@types/ws": "^8.5.4"
+		"@types/ws": "^8.5.4",
+		"typescript": "^5.0.4"
 	},
 	"dependencies": {
-		"uuid": "^9.0.0",
+		"@directus/types": "^10.0.0",
+		"get-random-values": "^2.1.0",
+		"nanoid": "^4.0.2",
 		"ws": "^8.13.0"
 	},
 	"repository": {

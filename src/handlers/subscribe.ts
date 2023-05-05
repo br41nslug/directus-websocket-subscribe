@@ -4,7 +4,7 @@
  * 
  * SUBSCRIBE request handler
  */
-import { Query } from '@directus/shared/types';
+import { Query } from '@directus/types';
 import { ClientHandler, WebsocketMessage, WebsocketClient } from '../types';
 import { Logger } from 'pino';
 
@@ -51,9 +51,9 @@ export const subscribeHandler: ClientHandler = ({ core: cfg }, context) => {
                     await service.readMany(keys, query) : data.payload;
                 if (payload.length > 0) {
                     if (data.key) payload = payload[0];
-                    const msg = await emitter.emitFilter('websocket.subscribe.beforeSend', { 
+                    const msg = await emitter.emitFilter<Record<string, any>>('websocket.subscribe.beforeSend', { 
                         type: 'SUBSCRIPTION', ...data, payload 
-                    });
+                    }, {}, {} as any);
                     if (uid) msg.uid = uid;
                     client.socket.send(JSON.stringify(msg));
                 }
