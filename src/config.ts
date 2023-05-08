@@ -20,23 +20,23 @@ export async function getConfig(
     } else {
         if ('WEBSOCKET_CORE_GET' in env) {
             if ( ! config.core) config.core = {};
-            config.core.get = !!env.WEBSOCKET_SYSTEM_GET;
+            config.core.get = !!env.WEBSOCKET_CORE_GET;
         }
         if ('WEBSOCKET_CORE_POST' in env) {
             if ( ! config.core) config.core = {};
-            config.core.post = !!env.WEBSOCKET_SYSTEM_POST;
+            config.core.post = !!env.WEBSOCKET_CORE_POST;
         }
         if ('WEBSOCKET_CORE_PATCH' in env) {
             if ( ! config.core) config.core = {};
-            config.core.patch = !!env.WEBSOCKET_SYSTEM_PATCH;
+            config.core.patch = !!env.WEBSOCKET_CORE_PATCH;
         }
         if ('WEBSOCKET_CORE_DELETE' in env) {
             if ( ! config.core) config.core = {};
-            config.core.delete = !!env.WEBSOCKET_SYSTEM_DELETE;
+            config.core.delete = !!env.WEBSOCKET_CORE_DELETE;
         }
         if ('WEBSOCKET_CORE_SUBSCRIBE' in env) {
             if ( ! config.core) config.core = {};
-            config.core.subscribe = !!env.WEBSOCKET_SYSTEM_SUBSCRIBE;
+            config.core.subscribe = !!env.WEBSOCKET_CORE_SUBSCRIBE;
         }
     }
     logger.debug('[ WS ] added environment config - ' + JSON.stringify(config));

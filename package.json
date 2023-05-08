@@ -1,6 +1,6 @@
 {
 	"name": "directus-extension-websocket-subscribe",
-	"version": "3.1.11",
+	"version": "3.1.12",
 	"author": "brainslug",
 	"keywords": [
 		"directus",
@@ -11,7 +11,7 @@
 	],
 	"directus:extension": {
 		"type": "hook",
-		"path": "dist/index.js",
+		"path": "dist/index.mjs",
 		"source": "src/index.ts",
 		"host": "^10.0.0"
 	},

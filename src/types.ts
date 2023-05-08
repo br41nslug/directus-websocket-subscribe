@@ -36,7 +36,7 @@ export type WebsocketClient = {
 }
 
 export type ClientEventContext = {
-    parseMessage?: (msg: WebsocketMessage, request: any) => WebsocketMessage | void;
+    parseMessage?: (msg: WebsocketMessage, request: any) => WebsocketMessage | undefined;
     onOpen?: (client: WebsocketClient, ev: Event) => any;
     onMessage?: (client: WebsocketClient, msg: WebsocketMessage) => Promise<any>;
     onError?: (client: WebsocketClient, ev: Event) => any;
