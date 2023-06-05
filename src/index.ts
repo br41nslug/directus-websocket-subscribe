@@ -17,7 +17,6 @@ export default defineHook(async ({ init, action }, context) => {
     ]).then(async ([app, server]) => {
         const { logger, emitter } = context;
         
-        console.log('get config');
         const config = await getConfig({
             public: false,
             path: '/websocket',

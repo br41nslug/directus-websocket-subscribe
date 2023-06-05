@@ -29,7 +29,7 @@ export const patchHandler: ClientHandler = ({ core: cfg }, context) => {
             let result;
             if (message.ids) {
                 const keys = await service.updateMany(message.ids, message.data);
-                result = await service.readMany(keys, message.query);
+                result = await service.readMany(keys, message.query ?? {});
             } else if (message.id) {
                 const key = await service.updateOne(message.id, message.data);
                 result = await service.readOne(key);

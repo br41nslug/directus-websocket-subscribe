@@ -23,7 +23,7 @@ export const getHandler: ClientHandler = ({ core: cfg }, context) => {
                 knex, schema: await getSchema(),
                 accountability: client.accountability
             });
-            const result = await service.readByQuery(message.query);
+            const result = await service.readByQuery(message.query ?? {});
             client.socket.send(outgoingResponse(result, message));
         },
     };

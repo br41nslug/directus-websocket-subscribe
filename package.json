@@ -9,11 +9,12 @@
 		"directus-subscribe",
 		"directus-websocket"
 	],
+	"type": "module",
 	"directus:extension": {
 		"type": "hook",
 		"path": "dist/index.mjs",
 		"source": "src/index.ts",
-		"host": "^10.0.0"
+		"host": "^10.2.1"
 	},
 	"scripts": {
 		"build": "directus-extension build",
@@ -22,14 +23,14 @@
 		"docker-stop": "docker-compose down"
 	},
 	"devDependencies": {
-		"@directus/extensions-sdk": "^10.0.0",
+		"@directus/extensions-sdk": "10.1.3",
 		"@types/node": "^18.16.3",
 		"@types/pino": "^7.0.5",
 		"@types/ws": "^8.5.4",
-		"typescript": "^5.0.4"
+		"typescript": "^5.1.3"
 	},
 	"dependencies": {
-		"@directus/types": "^10.0.0",
+		"@directus/types": "^10.1.0",
 		"get-random-values": "^2.1.0",
 		"nanoid": "^4.0.2",
 		"ws": "^8.13.0"
