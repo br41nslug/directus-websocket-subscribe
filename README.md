@@ -1,3 +1,5 @@
+> NOTICE: As of Directus version 10.3 this extension has been integrated into the Directus core making this extension obsolete and thus will not see any further development.
+
 # Directus Websocket Subscribe
 An extension to subscribe to directus updates over a websocket.
 
